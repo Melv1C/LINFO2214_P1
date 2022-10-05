@@ -35,22 +35,24 @@ void func(int sockfd) {
 
 int main(int argc, char **argv) {
 
+    int opt;
+
     int n_thread;
     int size;
     int port;
 
     // A faire
-    while ((opt = getopt(argc, argv, "k")) != -1) {
+    while ((opt = getopt(argc, argv, "k:s:p")) != -1) {
         switch (opt) {
             case 'k':
-                size = optarg;
+                size = (int) strtol(optarg,NULL,10);
                 break;
 
             case 's':
-                size = optarg;
+                size = (int) strtol(optarg,NULL,10);
                 break;
             case 'p':
-                port = optarg;
+                port = (int) strtol(optarg,NULL,10);
                 break;
             default:
                 return printf("ERREUR");
@@ -58,8 +60,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    int sockfd, connfd;
-    struct sockaddr_in servaddr, cli;
+    int sockfd;
+    struct sockaddr_in servaddr;
 
     // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);

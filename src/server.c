@@ -47,6 +47,8 @@ void func(int connfd)
 
 int main(int argc, char **argv) {
 
+    int opt;
+
     int n_thread;
     int size;
     int port;
@@ -54,13 +56,13 @@ int main(int argc, char **argv) {
     while ((opt = getopt(argc, argv, "j:s:p")) != -1) {
         switch (opt) {
             case 'j':
-                n_thread = optarg;
+                n_thread = (int) strtol(optarg,NULL,10);
                 break;
             case 's':
-                size = optarg;
+                size = (int) strtol(optarg,NULL,10);
                 break;
             case 'p':
-                port = optarg;
+                port = (int) strtol(optarg,NULL,10);
                 break;
             default:
                 return printf("ERREUR");
