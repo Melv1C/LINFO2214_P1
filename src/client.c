@@ -2,18 +2,8 @@
 // Created by melvyn on 5/10/22.
 //
 
+#include "client.h"
 
-#include <arpa/inet.h> // inet_addr()
-#include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h> // bzero()
-#include <sys/socket.h>
-#include <unistd.h> // read(), write(), close()
-#define MAX 80
-#define PORT 8080
-#define SA struct sockaddr
 void func(int sockfd) {
     char buff[MAX];
     int n;
@@ -37,28 +27,38 @@ int main(int argc, char **argv) {
 
     int opt;
 
-    int n_thread;
     int size;
-    int port;
+    int rate;
+    int time;
 
-    // A faire
-    while ((opt = getopt(argc, argv, "k:s:p")) != -1) {
+    while ((opt = getopt(argc, argv, "k:r:t:")) != -1) {
         switch (opt) {
             case 'k':
                 size = (int) strtol(optarg,NULL,10);
                 break;
-
-            case 's':
-                size = (int) strtol(optarg,NULL,10);
+            case 'r':
+                rate = (int) strtol(optarg,NULL,10);
                 break;
-            case 'p':
-                port = (int) strtol(optarg,NULL,10);
+            case 't':
+                time = (int) strtol(optarg,NULL,10);
                 break;
             default:
-                return printf("ERREUR");
-
+                return printf("ERREUR\n");
         }
     }
+
+    if (optind + 1 != argc) {
+        printf("Unexpected number of positional arguments\n");
+        return -1;
+    }
+
+    char* ip;
+    int port;
+
+    ip = strtok(argv[optind], ":");
+    port = (int) strtol(strtok(argv[optind], ":"), NULL, 10);
+
+    printf("Argument du client : size: %d, rate: %d, time: %d, ip: %s, port: %d\n",size,rate,time,ip,port);
 
     int sockfd;
     struct sockaddr_in servaddr;

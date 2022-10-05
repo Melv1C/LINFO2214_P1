@@ -2,7 +2,7 @@
 CC = gcc
 
 # Feel free to add other C flags   
-CFLAGS += -c -Wall -std=gnu99 -O2 -Wextra -Werror 
+CFLAGS += -c -Wall -std=gnu99 -O2 -Wextra
 # By default, we colorize the output, but this might be ugly in log files, so feel free to remove the following line.
 CFLAGS += -D_COLOR 
 
@@ -22,10 +22,10 @@ SERVER = server
 
 all: $(CLIENT) $(SERVER)
 $(CLIENT): $(CLIENT_OBJECTS)
-	$(CC) $(SENDER_OBJECTS) -o $@ $(LDFLAGS) 
+	$(CC) $(CLIENT_OBJECTS) -o $@ $(LDFLAGS)
 
 $(SERVER): $(SERVER_OBJECTS)
-	$(CC) $(RECEIVER_OBJECTS) -o $@ $(LDFLAGS)
+	$(CC) $(SERVER_OBJECTS) -o $@ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
@@ -33,10 +33,10 @@ $(SERVER): $(SERVER_OBJECTS)
 .PHONY: clean mrproper
 
 clean:
-	rm -f $(SENDER_OBJECTS) $(RECEIVER_OBJECTS) $(pkt_OBJECTS) $(test_pck_OBJECTS)
+	rm -f $(CLIENT_OBJECTS) $(SERVER_OBJECTS)
 
 mrproper:
-	rm -f $(SENDER) $(RECEIVER) $(PKT) $(TPKT)
+	rm -f $(CLIENT) $(SERVER)
 	rm -f 
 # It is likely that you will need to update this
 tests: debug

@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
                 port = (int) strtol(optarg,NULL,10);
                 break;
             default:
-                return printf("ERREUR");
+                return printf("ERREUR\n");
 
         }
     }
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
     sockfd = socket(AF_INET,SOCK_STREAM,0);
     if (sockfd == -1)
     {
-        printf("Failed to create the socket.");
+        printf("Failed to create the socket.\n");
         return -1;
     }else{
         printf("Socket ok \n");
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 
     if (bind(sockfd, (SA*)&servaddr, sizeof(servaddr) != 0))
     {
-        printf("erreur socket : bind");
+        printf("erreur socket : bind\n");
         return -1;
     }else{
         printf("Bind ok \n");
