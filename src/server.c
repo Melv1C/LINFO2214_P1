@@ -11,39 +11,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#define MAX 80
-#define PORT 8080
-#define SA struct sockaddr
-
-void func(int connfd)
-{
-    char buff[MAX];
-    int n;
-    // infinite loop for chat
-    for (;;) {
-        bzero(buff, MAX);
-
-        // read the message from client and copy it in buffer
-        read(connfd, buff, sizeof(buff));
-        // print buffer which contains the client contents
-        printf("From client: %s\t To client : ", buff);
-        bzero(buff, MAX);
-        n = 0;
-        // copy server message in the buffer
-        while ((buff[n++] = getchar()) != '\n')
-            ;
-
-        // and send that buffer to client
-        write(connfd, buff, sizeof(buff));
-
-        // if msg contains "Exit" then server exit and chat ended.
-        if (strncmp("exit", buff, 4) == 0) {
-            printf("Server Exit...\n");
-            break;
-        }
-    }
-}
-
 
 int main(int argc, char **argv) {
 
@@ -53,7 +20,7 @@ int main(int argc, char **argv) {
     int size;
     int port;
 
-    while ((opt = getopt(argc, argv, "j:s:p")) != -1) {
+    while ((opt = getopt(argc, argv, "j:s:p:")) != -1) {
         switch (opt) {
             case 'j':
                 n_thread = (int) strtol(optarg,NULL,10);
@@ -70,6 +37,8 @@ int main(int argc, char **argv) {
         }
     }
 
+    printf("Argument du server : n_thread: %d, size: %d, port: %d\n",n_thread,size,port);
+
     // Génerer les fichiers
 
 
@@ -78,55 +47,75 @@ int main(int argc, char **argv) {
 
     // Connection
 
-    int sockfd, connfd, len;
-    struct sockaddr_in servaddr, cli;
+    int socket_desc, client_sock, client_size;
+    struct sockaddr_in server_addr, client_addr;
+    char server_message[2000], client_message[2000];
 
-    sockfd = socket(AF_INET,SOCK_STREAM,0);
-    if (sockfd == -1)
-    {
-        printf("Failed to create the socket.\n");
-        return -1;
-    }else{
-        printf("Socket ok \n");
-    }
-    bzero(&servaddr, sizeof(servaddr));
+    // Clean buffers:
+    memset(server_message, '\0', sizeof(server_message));
+    memset(client_message, '\0', sizeof(client_message));
 
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htonl(port);
+    // Create socket:
+    socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (bind(sockfd, (SA*)&servaddr, sizeof(servaddr) != 0))
-    {
-        printf("erreur socket : bind\n");
-        return -1;
-    }else{
-        printf("Bind ok \n");
-    }
-
-    // Now server is ready to listen and verification
-    if ((listen(sockfd, 2)) != 0) {
-        printf("Listen failed...\n");
+    if(socket_desc < 0){
+        printf("Error while creating socket\n");
         return -1;
     }
-    else{
-        printf("Server listening..\n");
+    printf("Socket created successfully\n");
+
+    // Set port and IP:
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    // Bind to the set port and IP:
+    if(bind(socket_desc, (struct sockaddr*)&server_addr, sizeof(server_addr))<0){
+        printf("Couldn't bind to the port\n");
+        return -1;
+    }
+    printf("Done with binding\n");
+
+    // Listen for clients:
+    if(listen(socket_desc, 1) < 0){
+        printf("Error while listening\n");
+        return -1;
+    }
+    printf("\nListening for incoming connections.....\n");
+
+    // Accept an incoming connection:
+    client_size = sizeof(client_addr);
+
+    client_sock = accept(socket_desc, (struct sockaddr*)&client_addr, &client_size);
+
+    if (client_sock < 0){
+        printf("Can't accept\n");
+        return -1;
+    }
+    printf("Client connected\n");
+
+
+    while(1){
+        // Receive client's message:
+        if (recv(client_sock, client_message, sizeof(client_message), 0) < 0){
+            printf("Couldn't receive\n");
+            return -1;
+        }
+        printf("New msg from client: %s\n", client_message);
+
+        // Respond to client:
+        strcpy(server_message, "This is the server's message.");
+
+        if (send(client_sock, server_message, strlen(server_message), 0) < 0){
+            printf("Can't send\n");
+            return -1;
+        }
+
+        if (strstr(client_message, "exit")){
+            break;
+        }
     }
 
-    len = sizeof(cli);
-
-    // Accept the data packet from client and verification
-    connfd = accept(sockfd, (SA*)&cli, &len);
-    if (connfd < 0) {
-        printf("server accept failed...\n");
-        exit(0);
-    }
-    else
-        printf("server accept the client...\n");
-
-    // Function for chatting between client and server
-    func(connfd);
-
-    // After chatting close the socket
-    close(sockfd);
+    return 0;
 
 }
