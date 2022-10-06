@@ -41,9 +41,16 @@ int main(int argc, char **argv) {
 
     // Génerer les fichiers
 
+    srand ( time(NULL) );
 
-
-
+    uint8_t * files;
+    files = malloc(size*size*1000);
+    for (int i=0; i<1000; i++){
+        for (int j = 0; j < size*size; j++) {
+            int r = rand() % 256;
+            files[i*size*size+j] = r;
+        }
+    }
 
     // Connection
 
@@ -94,25 +101,32 @@ int main(int argc, char **argv) {
     }
     printf("Client connected\n");
 
-
     while(1){
         // Receive client's message:
         if (recv(client_sock, client_message, sizeof(client_message), 0) < 0){
             printf("Couldn't receive\n");
             return -1;
         }
+
+        if (strstr(client_message, "exit")){
+            break;
+        }
+
         printf("New msg from client: %s\n", client_message);
 
         // Respond to client:
-        strcpy(server_message, "This is the server's message.");
+        //strcpy(server_message, "This is the server's message.");
+
+        char* p = server_message;
+
+        for (int i = 0; i < size*size; i++) {
+            *(uint8_t *) p = files[((int) strtol(client_message,NULL,10))*size*size+i];
+            p += sizeof(uint8_t);
+        }
 
         if (send(client_sock, server_message, strlen(server_message), 0) < 0){
             printf("Can't send\n");
             return -1;
-        }
-
-        if (strstr(client_message, "exit")){
-            break;
         }
     }
 

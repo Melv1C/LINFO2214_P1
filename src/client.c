@@ -78,10 +78,12 @@ int main(int argc, char **argv) {
     }
     printf("Connected with server successfully\n");
 
-    while(1){
+    for (int i = 0; i < 10; i++) {
         // Get input from the user:
-        printf("Enter message: ");
-        gets(client_message);
+        //printf("Enter message: ");
+        //gets(client_message);
+
+        sprintf(client_message, "%d", rand() % 255);
 
         // Send the message to server:
         if(send(socket_desc, client_message, strlen(client_message), 0) < 0){
@@ -95,14 +97,19 @@ int main(int argc, char **argv) {
             return -1;
         }
 
-        printf("Server's response: %s\n",server_message);
+        printf("Server's response received\n");
 
-        if (strstr(client_message, "exit")){
-            break;
-        }
+        //printf("%u\n",*(uint8_t *)  server_message); // 1er elem de la matrice
+        //printf("%u\n",*(uint8_t *)  (server_message + sizeof(uint8_t))); // 2eme elem de la matrice
+
     }
 
+    strcpy(client_message, "exit");
 
+    if(send(socket_desc, client_message, strlen(client_message), 0) < 0){
+        printf("Unable to send message\n");
+        return -1;
+    }
 
     // Close the socket:
     close(socket_desc);
