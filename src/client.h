@@ -6,7 +6,6 @@
 #define PROJET1_CLIENT_H
 
 #endif //PROJET1_CLIENT_H
-
 #include <arpa/inet.h> // inet_addr()
 #include <netdb.h>
 #include <stdio.h>
@@ -15,11 +14,11 @@
 #include <strings.h> // bzero()
 #include <sys/socket.h>
 #include <unistd.h> // read(), write(), close()
-#define MAX 80
-#define PORT 8080
-#define SA struct sockaddr
+#include <poll.h>
+#include <sys/time.h>
 
-void func(int sockfd);
+int SEC = 1000000;
+int MAX_SIZE_FILE = 1024*1024;
 
 int main(int argc, char **argv);
 
