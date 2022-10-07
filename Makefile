@@ -39,7 +39,7 @@ mrproper:
 	rm -f $(CLIENT) $(SERVER)
 	rm -f 
 # It is likely that you will need to update this
-tests: debug
+tests: all
 	./tests/run_tests.sh
 
 # By default, logs are disabled. But you can enable them with the debug target.

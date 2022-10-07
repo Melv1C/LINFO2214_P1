@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 
         gettimeofday(&now, NULL);
 
-        if ((now.tv_sec - last_send.tv_sec) * 1000000 + now.tv_usec - last_send.tv_usec>10*SEC){
+        if ((now.tv_sec - last_send.tv_sec) * 1000000 + now.tv_usec - last_send.tv_usec>5*SEC){
             DEBUG("PLUS D'ACTIVITE SUR LE RESEAU\nFERMETURE DU RESEAU");
             break;
         }
@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
 
     free(server_message);
     free(client_message);
-
+    free(files);
     return 0;
 
 }
