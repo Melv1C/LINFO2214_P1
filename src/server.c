@@ -4,6 +4,7 @@
 
 
 #include "server.h"
+#include "debug.h"
 
 int main(int argc, char **argv) {
 
@@ -25,18 +26,17 @@ int main(int argc, char **argv) {
                 port = (int) strtol(optarg,NULL,10);
                 break;
             default:
-                return printf("ERREUR\n");
+                ERROR("PROBLEME AVEC LES ARGUMENTS");
+                return -1;
 
         }
     }
 
-    printf("Argument du server : n_thread: %d, size: %d, port: %d\n",n_thread,size,port);
+    DEBUG("Argument du server : n_thread: %d, size: %d, port: %d\n",n_thread,size,port);
 
     size = size*size;//Plus pratique
 
     // Génerer les fichiers
-
-    //srand ( time(NULL) );
 
     uint8_t * files;
     files = malloc(size*1000);
@@ -49,17 +49,26 @@ int main(int argc, char **argv) {
 
     // Connection
 
-    int socket_desc, client_sock, client_size;
+    int socket_desc;
+    int client_sock[MAX_CLIENT];
+    int client_size;
+    int new_sock;
+    int nbre_client = 0;
     struct sockaddr_in server_addr, client_addr;
+
+    //init all socket to 0
+    for (int i = 0; i < MAX_CLIENT; i++) {
+        client_sock[i] = 0;
+    }
 
     // Create socket:
     socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 
     if(socket_desc < 0){
-        printf("Error while creating socket\n");
+        ERROR("Error while creating socket");
         return -1;
     }
-    printf("Socket created successfully\n");
+    DEBUG("Socket created successfully");
 
     // Set port and IP:
     server_addr.sin_family = AF_INET;
@@ -68,32 +77,35 @@ int main(int argc, char **argv) {
 
     // Bind to the set port and IP:
     if(bind(socket_desc, (struct sockaddr*)&server_addr, sizeof(server_addr))<0){
-        printf("Couldn't bind to the port\n");
+        ERROR("Couldn't bind to the port");
         return -1;
     }
-    printf("Done with binding\n");
+    DEBUG("Done with binding");
 
     // Listen for clients:
-    if(listen(socket_desc, 1) < 0){
-        printf("Error while listening\n");
+    if(listen(socket_desc, 5) < 0){
+        ERROR("Error while listening");
         return -1;
     }
-    printf("\nListening for incoming connections.....\n");
+    DEBUG("\nListening for incoming connections.....\n");
 
     // Accept an incoming connection:
     client_size = sizeof(client_addr);
 
-    client_sock = accept(socket_desc, (struct sockaddr*)&client_addr, &client_size);
 
-    if (client_sock < 0){
-        printf("Can't accept\n");
-        return -1;
+    struct timeval start,now,last_send;
+    gettimeofday(&start, NULL);
+    gettimeofday(&last_send, NULL);
+
+    struct pollfd arrayPoll_server[1];
+    arrayPoll_server[0].fd = socket_desc;
+        arrayPoll_server[0].events = POLLIN;
+
+    struct pollfd arrayPoll_client[MAX_CLIENT];
+    for (int i = 0; i < MAX_CLIENT; i++) {
+        arrayPoll_client[i].fd = 0;
+        arrayPoll_client[i].events = POLLIN;
     }
-    printf("Client connected\n");
-
-    struct pollfd arrayPoll[1];
-    arrayPoll[0].fd = client_sock;
-    arrayPoll[0].events = POLLIN;
 
     char* server_message;
     server_message = malloc(sizeof(uint8_t) + sizeof(uint32_t) + size);
@@ -103,60 +115,85 @@ int main(int argc, char **argv) {
 
     while(1){
 
-        int poll_count = poll(arrayPoll, 1, 5);
+        int poll_count_server = poll(arrayPoll_server, 1, 5);
+        int poll_count_client = poll(arrayPoll_client, MAX_CLIENT, 5);
 
-        if (poll_count>0){
-            if (arrayPoll[0].revents == POLLIN){
+        gettimeofday(&now, NULL);
 
-                uint8_t * key;
-                uint32_t index;
-                uint32_t size_key;
+        if ((now.tv_sec - last_send.tv_sec) * 1000000 + now.tv_usec - last_send.tv_usec>10*SEC){
+            DEBUG("PLUS D'ACTIVITE SUR LE RESEAU\nFERMETURE DU RESEAU");
+            break;
+        }
 
-                memset(client_message, '\0', MAX_SIZE_KEY+ 2*sizeof(uint32_t));
+        if (poll_count_server>0) {
+            if (arrayPoll_server[0].revents == POLLIN) {
 
-                if (recv(client_sock, client_message, MAX_SIZE_KEY+ 2*sizeof(uint32_t), 0) < 0){
-                    printf("Couldn't receive\n");
+                new_sock = accept(socket_desc, (struct sockaddr *) &client_addr, &client_size);
+
+                if (new_sock < 0) {
+                    ERROR("Can't accept");
                     return -1;
                 }
 
-                if (strstr(client_message, "exit")){
-                    printf("EXIT\n");
-                    break;
-                }
-
-                index = *(uint32_t *)  client_message;
-                size_key = *(uint32_t *) (client_message+sizeof(uint32_t));
-
-                key = malloc(size_key);
-                for (int i = 0; i < size_key; i++) {
-                    *(uint8_t *) (key+i*sizeof(uint8_t)) = *(uint8_t *)  (client_message + 2*sizeof(uint32_t) + i*sizeof(uint8_t));
-                }
-                printf("NEW REQUEST OF INDEX: %d\n", index);
-
-                memset(server_message, '\0', sizeof(uint8_t) + sizeof(uint32_t) + size);
-
-                char* p = server_message;
-
-                *(uint8_t *) p = (uint8_t) 0;
-                p += sizeof(uint8_t);
-
-                *(uint32_t *) p = size;
-                p += sizeof(uint32_t);
+                DEBUG("Client connected %d",nbre_client+1);
 
 
-                for (int i = 0; i < size; i++) {
-                    *(uint8_t *) p = files[index+i];
+                client_sock[nbre_client] = new_sock;
+                arrayPoll_client[nbre_client].fd = client_sock[nbre_client];
+                nbre_client++;
+            }
+        }
+        if (poll_count_client>0){
+            for (int i = 0; i < nbre_client; i++) {
+                if (arrayPoll_client[i].revents == POLLIN) {
+
+                    uint8_t *key;
+                    uint32_t index;
+                    uint32_t size_key;
+
+                    memset(client_message, '\0', MAX_SIZE_KEY + 2 * sizeof(uint32_t));
+                    if (recv(client_sock[i], client_message, MAX_SIZE_KEY + 2 * sizeof(uint32_t), 0) < 0) {
+                        ERROR("Couldn't receive");
+                        return -1;
+                    }
+
+                    index = *(uint32_t *) client_message;
+                    size_key = *(uint32_t * )(client_message + sizeof(uint32_t));
+
+                    key = malloc(size_key);
+                    for (int i = 0; i < size_key; i++) {
+                        *(uint8_t * )(key + i * sizeof(uint8_t)) = *(uint8_t * )(
+                                client_message + 2 * sizeof(uint32_t) + i * sizeof(uint8_t));
+                    }
+                    DEBUG("NEW REQUEST FROM %d OF INDEX: %d", i+1, index);
+
+                    memset(server_message, '\0', sizeof(uint8_t) + sizeof(uint32_t) + size);
+
+                    char *p = server_message;
+
+                    *(uint8_t *) p = (uint8_t) 0;
                     p += sizeof(uint8_t);
+
+                    *(uint32_t *) p = size;
+                    p += sizeof(uint32_t);
+
+
+                    for (int i = 0; i < size; i++) {
+                        *(uint8_t *) p = files[index + i];
+                        p += sizeof(uint8_t);
+                    }
+
+                    if (send(client_sock[i], server_message, sizeof(uint8_t) + sizeof(uint32_t) + size, 0) < 0) {
+                        ERROR("Can't send");
+                        return -1;
+                    }
+
+                    DEBUG("SEND RESPOND TO %d",i+1);
+
+                    gettimeofday(&last_send, NULL);
+
+                    free(key);
                 }
-
-                if (send(client_sock, server_message, sizeof(uint8_t) + sizeof(uint32_t) + size, 0) < 0){
-                    printf("Can't send\n");
-                    return -1;
-                }
-
-                printf("SEND RESPOND\n");
-
-                free(key);
 
             }
         }

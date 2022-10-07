@@ -16,8 +16,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <poll.h>
+#include <sys/time.h>
 
+int SEC = 1000000;
 int MAX_SIZE_KEY = 128*128;
+
+int MAX_CLIENT = 100;
 
 
 int main(int argc, char **argv);
