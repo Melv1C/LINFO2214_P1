@@ -17,6 +17,8 @@
 #include <unistd.h>
 #include <poll.h>
 #include <sys/time.h>
+#include <math.h>
+
 
 int SEC = 1000000;
 int MAX_SIZE_KEY = 128*128;
