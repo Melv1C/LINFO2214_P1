@@ -18,6 +18,7 @@
 #include <poll.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <math.h>
 
 int SEC = 1000000;
 int MAX_SIZE_KEY = 128*128;
@@ -53,5 +54,7 @@ void push(struct node** head, int client, int socket, char* message);
 int main(int argc, char **argv);
 
 void *deal_new_request(void * arguments);
+
+void encrypt(uint8_t*keys,uint32_t size_key,uint32_t index,char* server_message,uint8_t* files,uint32_t size);
 
 
