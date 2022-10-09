@@ -7,7 +7,7 @@ CFLAGS += -c -Wall -std=gnu99 -O2 -Wextra
 CFLAGS += -D_COLOR 
 
 # You may want to add something here
-LDFLAGS += -fPIE -lz -g 
+LDFLAGS += -fPIE -lz -g -lpthread
 
 # Adapt these as you want to fit with your project
 CLIENT_SOURCES = $(wildcard src/client.c)

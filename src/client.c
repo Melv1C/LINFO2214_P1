@@ -87,9 +87,10 @@ int main(int argc, char **argv) {
     arrayPoll[0].fd = socket_desc;
     arrayPoll[0].events = POLLIN;
 
-    struct timeval start,now,last_send;
+    struct timeval start,now,last_send,last_recv;
     gettimeofday(&start, NULL);
     gettimeofday(&last_send, NULL);
+    gettimeofday(&last_recv, NULL);
 
     char * client_message = malloc(2*sizeof(uint32_t)+size);
 
@@ -109,7 +110,7 @@ int main(int argc, char **argv) {
             if (nbre_request==nbre_respond){
                 DEBUG("FINISH\n");
                 break;
-            }else if ((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>(time+5)*SEC) {
+            }else if (((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>(time)*SEC)&((now.tv_sec - last_recv.tv_sec) * 1000000 + now.tv_usec - last_recv.tv_usec>5*SEC)) {
                 ERROR("NOT ALL RESPOND RECEIVED");
                 break;
             }
@@ -159,6 +160,7 @@ int main(int argc, char **argv) {
                 }
 
                 DEBUG("SERVER RESPOND");
+                gettimeofday(&last_recv, NULL);
                 nbre_respond++;
                 //DEBUG("%d",*(uint8_t *)  server_message); // Code d'erreur
                 //DEBUG("%d",*(uint32_t *)  (server_message+ sizeof(uint8_t))); // size
@@ -170,9 +172,21 @@ int main(int argc, char **argv) {
         }
     }
 
+
+
+    ERROR("Nombre de request : %d",nbre_request);
+    ERROR("Nombre de respond : %d",nbre_respond);
+
     free(server_message);
     free(client_message);
 
+
+    char exit_message[] = "EXIT";
+
+    if (send(socket_desc, exit_message, strlen(exit_message), 0) < 0){
+        printf("Can't send\n");
+        return -1;
+    }
     // Close the socket:
     close(socket_desc);
 

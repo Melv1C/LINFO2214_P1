@@ -2,7 +2,7 @@
 
 kill -9 2241
 
-./server -j 4 -s 32 -p 2241 &
+./server -j 10 -s 32 -p 2241 &
 
 sleep 1
 
