@@ -6,6 +6,47 @@
 #include "server.h"
 #include "debug.h"
 
+
+
+
+
+void encrypt(uint8_t*keys,uint32_t size_key,uint32_t index,char* server_message,uint8_t* files,uint32_t size) {
+  // arriver a file => index, genre
+  files += sizeof(uint8_t)*index; // normalement on est a la bonne dimension?
+
+  int nmatrices = size/size_key;
+
+  char* copy_server_message;
+  uint8_t* copy_files;
+
+
+  for (size_t i = 0; i < nmatrices; i++) {
+    for (size_t j = 0; j < nmatrices; j++) {  //savoir quelle *sousmatrice* on multiplie
+
+      for (size_t k = 0; k < size_key; k++) {  //savoir quelle case de la sousmatrice on calcule...
+        for (size_t l = 0; l < size_key; l++) { //c'estlong
+            copy_server_message = server_message;
+            copy_files = files;
+
+            copy_server_message += sizeof(uint8_t)*((size_key*size*i)+(size_key*j)+(size*k)+(l)); //on bouge le pointeur vers la case que l'on veut remplir.
+            
+            copy_files += sizeof(uint8_t)*((size_key*size *i)+(size_key *j));
+            uint8_t sol = 0;
+            for (size_t m = 0; m < size_key; m++) {  //le calcul en lui même
+            uint8_t a =  *(uint8_t *) keys + ((k*size_key)+m)*sizeof(uint8_t);
+            uint8_t b =  *(uint8_t *) copy_files + (l+(m*size)*sizeof(uint8_t));     //pas sur d'avoir récupéré correctement les valeurs
+            sol += a*b;            
+            }
+
+            
+            *(uint8_t*) copy_server_message = sol;
+            uint8_t w = * copy_server_message;
+        }
+      }
+    }
+  }
+}
+
 int main(int argc, char **argv) {
 
     int opt;
@@ -177,11 +218,19 @@ int main(int argc, char **argv) {
                     *(uint32_t *) p = size;
                     p += sizeof(uint32_t);
 
-
-                    for (int i = 0; i < size; i++) {
-                        *(uint8_t *) p = files[index + i];
-                        p += sizeof(uint8_t);
+                    if (size < size_key || size%size_key != 0)
+                    {
+                        ERROR("File/Key size error");
+                        return -1;
                     }
+                    
+
+                    uint8_t hafsize, hafkeysize;
+                    hafsize = sqrt(size);
+                    hafkeysize = sqrt(size_key);   //encrypt takes sizes such as the matrix is size*size
+
+                    encrypt(key,hafkeysize,index,p,files,hafsize);
+
 
                     if (send(client_sock[i], server_message, sizeof(uint8_t) + sizeof(uint32_t) + size, 0) < 0) {
                         ERROR("Can't send");
