@@ -16,9 +16,20 @@
 #include <unistd.h> // read(), write(), close()
 #include <poll.h>
 #include <sys/time.h>
+#include <pthread.h>
 
 int SEC = 1000000;
 int MAX_SIZE_FILE = 1024*1024;
 
+struct arg_struct {
+    int size;
+    int socket_desc;
+    int *nbre_request;
+    int time;
+    int rate;
+};
+
 int main(int argc, char **argv);
+
+void * send_request(void * arguments);
 

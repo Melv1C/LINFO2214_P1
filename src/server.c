@@ -251,7 +251,7 @@ int main(int argc, char **argv) {
                         return -1;
                     }
 
-                    DEBUG("+    CLIENT %d   INDEX : %d", i,*(uint32_t *) client_message1);
+                    DEBUG("++++++++++ CLIENT %d   INDEX : %d", i,*(uint32_t *) client_message1);
 
                     nbre_request++;
                     if (requests == NULL){
@@ -355,7 +355,7 @@ void *deal_new_request(void * arguments){
         hafsize = sqrt(size);
         hafkeysize = sqrt(size_key);   //encrypt takes sizes such as the matrix is size*size
 
-        encrypt(key,hafkeysize,index,p,files,hafsize);
+        encrypt(key,hafkeysize,index,&p,files,hafsize);
 
         int error;
         if (error = send(client_sock, server_message, sizeof(uint8_t) + sizeof(uint32_t) + size, 0) < 0) {
@@ -363,7 +363,7 @@ void *deal_new_request(void * arguments){
             return -1;
         }
 
-        DEBUG("-    CLIENT %d   INDEX : %d %d",cli,index,*(uint8_t *) (server_message + sizeof(uint32_t)+ sizeof(uint8_t)));
+        DEBUG("---------- CLIENT %d   INDEX : %d %d",cli,index,*(uint8_t *) (server_message + sizeof(uint32_t)+ sizeof(uint8_t)));
 
         free(key);
         free(server_message);
@@ -375,7 +375,7 @@ void *deal_new_request(void * arguments){
     gettimeofday(timer, NULL);
 }
 
-void encrypt(uint8_t*keys,uint32_t size_key,uint32_t index,char* server_message,uint8_t* files,uint32_t size) {
+void encrypt(uint8_t*keys,uint32_t size_key,uint32_t index,char** server_message,uint8_t* files,uint32_t size) {
     // arriver a file => index, genre
     files += sizeof(uint8_t)*index; // normalement on est a la bonne dimension?
 
@@ -390,7 +390,7 @@ void encrypt(uint8_t*keys,uint32_t size_key,uint32_t index,char* server_message,
 
             for (size_t k = 0; k < size_key; k++) {  //savoir quelle case de la sousmatrice on calcule...
                 for (size_t l = 0; l < size_key; l++) { //c'estlong
-                    copy_server_message = server_message;
+                    copy_server_message = *server_message;
                     copy_files = files;
 
                     copy_server_message += sizeof(uint8_t)*((size_key*size*i)+(size_key*j)+(size*k)+(l)); //on bouge le pointeur vers la case que l'on veut remplir.

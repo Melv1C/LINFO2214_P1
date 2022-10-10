@@ -60,6 +60,6 @@ int main(int argc, char **argv);
 
 void *deal_new_request(void * arguments);
 
-void encrypt(uint8_t*keys,uint32_t size_key,uint32_t index,char* server_message,uint8_t* files,uint32_t size);
+void encrypt(uint8_t*keys,uint32_t size_key,uint32_t index,char** server_message,uint8_t* files,uint32_t size);
 
 

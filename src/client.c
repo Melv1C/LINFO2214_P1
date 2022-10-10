@@ -103,33 +103,107 @@ int main(int argc, char **argv) {
     int nbre_request = 0;
     int nbre_respond = 0;
 
+    struct arg_struct * args = (struct arg_struct *) malloc(sizeof(struct arg_struct));
+    args->nbre_request = &nbre_request;
+    args->size = size;
+    args->socket_desc = socket_desc;
+    args->time = time;
+    args->rate = rate;
+
+    pthread_t threads;
+    pthread_create(&(threads),NULL,&send_request,(void *) args);
+
     while (1) {
 
+        gettimeofday(&now, NULL);
         int poll_count = poll(arrayPoll, 1, 5);
 
-        gettimeofday(&now, NULL);
-
-        //SI ON A FINI D'ENVOYE LES REQUEST ON TERMINE LA CONNEXION
-
-            //SI ON A RECU TOUTES LES RESPOND
-
-            //SI ON A PAS RECU TOUTES LES RESPOND MAIS QUE CA FAIT 5SEC QUE L'ON A PLUS DE NOUVELLE DU SERVER
-
-        if ((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>time*SEC+SEC/rate){
-            if (nbre_request==nbre_respond){
-                INFO("FINISH\n");
-                break;
-            }else if (((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>(time)*SEC)&((now.tv_sec - last_recv.tv_sec) * 1000000 + now.tv_usec - last_recv.tv_usec>10*SEC)) {
-                INFO("NOT ALL RESPOND RECEIVED");
-                break;
-            }
+        if (nbre_respond==nbre_request && (now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>time*SEC+SEC/rate){
+            INFO("FINISH\n");
+            break;
+        }else if (((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>time*SEC+SEC/rate)&((now.tv_sec - last_recv.tv_sec) * 1000000 + now.tv_usec - last_recv.tv_usec>3*SEC)) {
+            INFO("NOT ALL RESPOND RECEIVED");
+            break;
         }
 
+        //SI ON RECOIT UNE RESPOND DU SERVER
+
+        if (poll_count>0){
+
+            if (arrayPoll[0].revents == POLLIN){
+                // Receive the server's response:
+
+                memset(server_message1, '\0', sizeof(uint8_t) + sizeof(uint32_t));
+
+                if(read(socket_desc, server_message1, (sizeof(uint8_t) + sizeof(uint32_t))) < 0) {
+                    ERROR("Error while receiving server's msg");
+                    return -1;
+                }
+
+                if(*(uint8_t *) server_message1 == 0 & *(uint32_t *) (server_message1+ sizeof(uint8_t)) > 0){ //ON VERIFIE LE CODE D'ERREUR
+
+                    server_message2 = malloc(*(uint32_t *)  (server_message1+ sizeof(uint8_t)));
+
+                    if(read(socket_desc, server_message2, (*(uint32_t *)  (server_message1+ sizeof(uint8_t)))) < 0){
+                        ERROR("Error while receiving server's msg");
+                        return -1;
+                    }
+
+                    DEBUG("SERVER RESPOND");
+                    gettimeofday(&last_recv, NULL);
+                    nbre_respond++;
+                    //DEBUG("%d",*(uint8_t *)  server_message1); // Code d'erreur
+                    DEBUG("size : %d",*(uint32_t *)  (server_message1 + sizeof(uint8_t))); // size
+                    DEBUG("matrice : %d",*(uint8_t *)  server_message2); // 1er elem de la matrice
+
+                    free(server_message2);
+
+                } else{
+                    //ERROR("RESPOND WITH WRONG ERROR CODE %d",*(uint8_t *)  server_message1);
+                }
+            }else{
+                ERROR("NOT A POLLIN %d",arrayPoll->revents);
+            }
+        }
+    }
+
+    //AFFICHER LES STATS
+    INFO("STATS\n\nNombre de request : %d\nNombre de respond : %d\n",nbre_request,nbre_respond);
+
+    free(server_message1);
+    free(client_message);
+    //CLOSE DE SOCKET
+    close(socket_desc);
+
+    return 0;
+
+}
+
+void *send_request(void * arguments){
+
+    struct arg_struct * args = arguments;
+
+    int size = args->size;
+    int socket_desc = args->socket_desc;
+    int* nbre_request = args->nbre_request;
+    int time = args->time;
+    int rate = args->rate;
+
+    struct timeval now,start,last_send;
+    gettimeofday(&start, NULL);
+    gettimeofday(&last_send, NULL);
+
+    char * client_message;
+    client_message = malloc(2*sizeof(uint32_t)+size);
+
+    while(1){
+        gettimeofday(&now, NULL);
+        if ((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>time*SEC+SEC/rate){
+            break;
+        }
         //ON ENVOYE LES REQUEST
 
-        //INFO("Interval de temps : %d %d",((now.tv_sec - last_send.tv_sec) * 1000000 + now.tv_usec - last_send.tv_usec),SEC/rate);
-
-        if (((now.tv_sec - last_send.tv_sec) * 1000000 + now.tv_usec - last_send.tv_usec>SEC/rate)&((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec<time*SEC+SEC/rate)){
+        if ((now.tv_sec - last_send.tv_sec) * 1000000 + now.tv_usec - last_send.tv_usec>SEC/rate){
 
             memset(client_message, '\0', 2*sizeof(uint32_t)+size);
 
@@ -155,63 +229,11 @@ int main(int argc, char **argv) {
             }
 
             DEBUG("REQUEST OF INDEX %d SEND", index);
-            nbre_request++;
+            (*(nbre_request))++;
             gettimeofday(&last_send, NULL);
-
-        }
-
-        //SI ON RECOIT UNE RESPOND DU SERVER
-
-        if (poll_count>0){
-
-            if (arrayPoll[0].revents == POLLIN){
-                // Receive the server's response:
-
-                memset(server_message1, '\0', sizeof(uint8_t) + sizeof(uint32_t));
-
-                if(read(socket_desc, server_message1, (sizeof(uint8_t) + sizeof(uint32_t))) < 0) {
-                    ERROR("Error while receiving server's msg");
-                    return -1;
-                }
-
-                if(*(uint8_t *) server_message1 == 0 & *(uint32_t *) (server_message1+ sizeof(uint8_t)) > 0){ //ON VERIFIE LE CODE D'ERREUR
-
-                    server_message2 = malloc(*(uint32_t *)  (server_message1+ sizeof(uint8_t)));
-
-                    if(read(socket_desc, server_message2, *(uint32_t *)  (server_message1+ sizeof(uint8_t))) < 0){
-                        ERROR("Error while receiving server's msg");
-                        return -1;
-                    }
-
-                    DEBUG("SERVER RESPOND");
-                    gettimeofday(&last_recv, NULL);
-                    nbre_respond++;
-                    //DEBUG("%d",*(uint8_t *)  server_message1); // Code d'erreur
-                    DEBUG("size : %d",*(uint32_t *)  (server_message1 + sizeof(uint8_t))); // size
-                    DEBUG("matrice : %d",*(uint8_t *)  server_message2); // 1er elem de la matrice
-
-                    free(server_message2);
-
-                } else{
-                    //ERROR("RESPOND WITH WRONG ERROR CODE %d",*(uint8_t *)  server_message1);
-                }
-            }else{
-                ERROR("NOT A POLLIN %d",arrayPoll->revents);
-            }
         }
     }
-
-
-    //AFFICHER LES STATS
-    INFO("STATS\n\nNombre de request : %d\nNombre de respond : %d\n",nbre_request,nbre_respond);
-
-    free(server_message1);
     free(client_message);
-
-    //CLOSE DE SOCKET
-    close(socket_desc);
-
-    return 0;
-
+    pthread_exit(NULL);
 }
 
