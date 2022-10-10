@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     ip = strtok(argv[optind], ":");
     port = (int) strtol(strtok(NULL, ":"), NULL, 10);
 
-    DEBUG("Argument du client : size: %d, rate: %d, time: %d, ip: %s, port: %d",size,rate,time,ip,port);
+    INFO("Argument du client : size: %d, rate: %d, time: %d, ip: %s, port: %d",size,rate,time,ip,port);
 
     size = size*size;
 
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
         ERROR("Unable to connect");
         return -1;
     }
-    DEBUG("Connected with server successfully");
+    INFO("----------    CONNECT TO THE SERVER   ----------");
 
     //---------------------------------------------------------------------------------------------------
     //ECHANGE AVEC LE SERVEUR
@@ -92,10 +92,13 @@ int main(int argc, char **argv) {
     gettimeofday(&last_send, NULL);
     gettimeofday(&last_recv, NULL);
 
-    char * client_message = malloc(2*sizeof(uint32_t)+size);
+    char * client_message;
+    client_message = malloc(2*sizeof(uint32_t)+size);
 
-    char* server_message;
-    server_message = malloc(sizeof(uint8_t) + sizeof(uint32_t) + MAX_SIZE_FILE);
+    char* server_message1;
+    server_message1 = malloc(sizeof(uint8_t) + sizeof(uint32_t));
+
+    char* server_message2;
 
     int nbre_request = 0;
     int nbre_respond = 0;
@@ -106,15 +109,25 @@ int main(int argc, char **argv) {
 
         gettimeofday(&now, NULL);
 
+        //SI ON A FINI D'ENVOYE LES REQUEST ON TERMINE LA CONNEXION
+
+            //SI ON A RECU TOUTES LES RESPOND
+
+            //SI ON A PAS RECU TOUTES LES RESPOND MAIS QUE CA FAIT 5SEC QUE L'ON A PLUS DE NOUVELLE DU SERVER
+
         if ((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>time*SEC+SEC/rate){
             if (nbre_request==nbre_respond){
-                DEBUG("FINISH\n");
+                INFO("FINISH\n");
                 break;
-            }else if (((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>(time)*SEC)&((now.tv_sec - last_recv.tv_sec) * 1000000 + now.tv_usec - last_recv.tv_usec>5*SEC)) {
-                ERROR("NOT ALL RESPOND RECEIVED");
+            }else if (((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>(time)*SEC)&((now.tv_sec - last_recv.tv_sec) * 1000000 + now.tv_usec - last_recv.tv_usec>10*SEC)) {
+                INFO("NOT ALL RESPOND RECEIVED");
                 break;
             }
         }
+
+        //ON ENVOYE LES REQUEST
+
+        //INFO("Interval de temps : %d %d",((now.tv_sec - last_send.tv_sec) * 1000000 + now.tv_usec - last_send.tv_usec),SEC/rate);
 
         if (((now.tv_sec - last_send.tv_sec) * 1000000 + now.tv_usec - last_send.tv_usec>SEC/rate)&((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec<time*SEC+SEC/rate)){
 
@@ -147,47 +160,55 @@ int main(int argc, char **argv) {
 
         }
 
+        //SI ON RECOIT UNE RESPOND DU SERVER
+
         if (poll_count>0){
 
             if (arrayPoll[0].revents == POLLIN){
                 // Receive the server's response:
 
-                memset(server_message, '\0', sizeof(uint8_t) + sizeof(uint32_t) + MAX_SIZE_FILE);
+                memset(server_message1, '\0', sizeof(uint8_t) + sizeof(uint32_t));
 
-                if(recv(socket_desc, server_message, sizeof(uint8_t) + sizeof(uint32_t) + MAX_SIZE_FILE, 0) < 0){
+                if(read(socket_desc, server_message1, (sizeof(uint8_t) + sizeof(uint32_t))) < 0) {
                     ERROR("Error while receiving server's msg");
                     return -1;
                 }
 
-                DEBUG("SERVER RESPOND");
-                gettimeofday(&last_recv, NULL);
-                nbre_respond++;
-                //DEBUG("%d",*(uint8_t *)  server_message); // Code d'erreur
-                //DEBUG("%d",*(uint32_t *)  (server_message+ sizeof(uint8_t))); // size
-                //DEBUG("%d",*(uint8_t *)  (server_message+ sizeof(uint8_t)+ sizeof(uint32_t))); // 1er elem de la matrice
+                if(*(uint8_t *) server_message1 == 0 & *(uint32_t *) (server_message1+ sizeof(uint8_t)) > 0){ //ON VERIFIE LE CODE D'ERREUR
 
+                    server_message2 = malloc(*(uint32_t *)  (server_message1+ sizeof(uint8_t)));
+
+                    if(read(socket_desc, server_message2, *(uint32_t *)  (server_message1+ sizeof(uint8_t))) < 0){
+                        ERROR("Error while receiving server's msg");
+                        return -1;
+                    }
+
+                    DEBUG("SERVER RESPOND");
+                    gettimeofday(&last_recv, NULL);
+                    nbre_respond++;
+                    //DEBUG("%d",*(uint8_t *)  server_message1); // Code d'erreur
+                    DEBUG("size : %d",*(uint32_t *)  (server_message1 + sizeof(uint8_t))); // size
+                    DEBUG("matrice : %d",*(uint8_t *)  server_message2); // 1er elem de la matrice
+
+                    free(server_message2);
+
+                } else{
+                    //ERROR("RESPOND WITH WRONG ERROR CODE %d",*(uint8_t *)  server_message1);
+                }
             }else{
-                return -1;
+                ERROR("NOT A POLLIN %d",arrayPoll->revents);
             }
         }
     }
 
 
+    //AFFICHER LES STATS
+    INFO("STATS\n\nNombre de request : %d\nNombre de respond : %d\n",nbre_request,nbre_respond);
 
-    ERROR("Nombre de request : %d",nbre_request);
-    ERROR("Nombre de respond : %d",nbre_respond);
-
-    free(server_message);
+    free(server_message1);
     free(client_message);
 
-
-    char exit_message[] = "EXIT";
-
-    if (send(socket_desc, exit_message, strlen(exit_message), 0) < 0){
-        printf("Can't send\n");
-        return -1;
-    }
-    // Close the socket:
+    //CLOSE DE SOCKET
     close(socket_desc);
 
     return 0;

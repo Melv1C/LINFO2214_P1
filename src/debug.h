@@ -14,11 +14,13 @@
  */
 #define ANSI_COLOR_BRIGHT_RED "\x1b[91m"
 #define ANSI_COLOR_CYAN "\x1b[36m"
+#define ANSI_COLOR_GREEN "\x1b[32m"
 #define ANSI_COLOR_RESET "\x1b[0m"
 #else
 #define ANSI_COLOR_BRIGHT_RED
 #define ANSI_COLOR_CYAN
 #define ANSI_COLOR_RESET
+#define ANSI_COLOR_GREEN
 #endif
 
 #define _LOG(color, prefix, msg, ...)\
@@ -27,6 +29,8 @@
     } while (0)
 
 #define ERROR(msg, ...) _LOG(ANSI_COLOR_BRIGHT_RED, "[ERROR] ", msg, ##__VA_ARGS__)
+
+#define INFO(msg, ...)  _LOG(ANSI_COLOR_GREEN, "[INFO] ", msg, ##__VA_ARGS__)
 
 #ifdef _DEBUG
 #define DEBUG(msg, ...) _LOG(ANSI_COLOR_CYAN, "[DEBUG] ", msg, ##__VA_ARGS__)

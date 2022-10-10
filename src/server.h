@@ -19,6 +19,7 @@
 #include <sys/time.h>
 #include <pthread.h>
 #include <math.h>
+#include <errno.h>
 
 int SEC = 1000000;
 int MAX_SIZE_KEY = 128*128;
@@ -26,7 +27,9 @@ int MAX_SIZE_KEY = 128*128;
 int MAX_CLIENT = 100;
 
 struct arg_struct {
-    int client_sock;
+    int * client_sock;
+    uint32_t index;
+    uint32_t size_key;
     char* client_message;
     uint8_t* files;
     int size;
@@ -38,8 +41,10 @@ struct arg_struct {
 struct node
 {
     int client;
-    int socket;
+    int * socket;
     char* message;
+    uint32_t index;
+    uint32_t size_key;
     struct node *next;
 };
 
@@ -49,7 +54,7 @@ struct client_sock_list_node
     struct client_sock_list_node *next;
 };
 
-void push(struct node** head, int client, int socket, char* message);
+void push(struct node** head, int client, int * socket, char* client_message1,char* client_message2);
 
 int main(int argc, char **argv);
 
