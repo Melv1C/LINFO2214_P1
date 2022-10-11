@@ -10,8 +10,8 @@ CFLAGS += -D_COLOR
 LDFLAGS += -fPIE -lz -g -lpthread -lm
 
 # Adapt these as you want to fit with your project
-CLIENT_SOURCES = $(wildcard src/client.c)
-SERVER_SOURCES = $(wildcard src/server.c)
+CLIENT_SOURCES = $(wildcard src/client.c src/log.c)
+SERVER_SOURCES = $(wildcard src/server.c src/log.c)
 
 CLIENT_OBJECTS = $(CLIENT_SOURCES:.c=.o)
 SERVER_OBJECTS = $(SERVER_SOURCES:.c=.o)

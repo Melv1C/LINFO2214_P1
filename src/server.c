@@ -5,12 +5,16 @@
 
 #include "server.h"
 #include "debug.h"
+#include "log.h"
 
 void push(struct node ** head, int client, int* socket, char* client_message1, char* client_message2) {
     struct node * current = *head;
 
+    int size = 1;
+
     while (current->next != NULL) {
         current = current->next;
+        size++;
     }
 
     /* now we can add a new variable */
@@ -21,6 +25,9 @@ void push(struct node ** head, int client, int* socket, char* client_message1, c
     current->next->index = *(uint32_t *) client_message1;
     current->next->size_key = *(uint32_t *) (client_message1+ sizeof(uint32_t));
     current->next->next = NULL;
+
+    //INFO("BUFFER SIZE : %d",size);
+
 }
 
 int main(int argc, char **argv) {
@@ -186,7 +193,8 @@ int main(int argc, char **argv) {
 
         //wait for an activity on one of the sockets , timeout is NULL ,
         //so wait indefinitely
-        int activity = select( max_sd + 1 , &readfds , NULL , NULL , NULL);
+        struct timeval tv = {0, 1000};
+        int activity = select( max_sd + 1 , &readfds , NULL , NULL , &tv);
 
         if (activity < 0)
         {
@@ -262,6 +270,7 @@ int main(int argc, char **argv) {
                         requests->index = *(uint32_t *) client_message1;
                         requests->size_key = *(uint32_t *) (client_message1+ sizeof(uint32_t));
                         requests->next = NULL;
+                        //INFO("BUFFER SIZE : 1");
                     }else{
                         push(&requests,i,&(client_sock[i]),client_message1,client_message2);
                     }
@@ -273,7 +282,6 @@ int main(int argc, char **argv) {
         // GERER LES REQUEST
 
         if (requests != NULL) {
-
             for (int i = 0; i < n_thread; i++) {
                 if (free_threads[i]==1){
                     struct arg_struct * args = (struct arg_struct *) malloc(sizeof(struct arg_struct));
@@ -283,7 +291,7 @@ int main(int argc, char **argv) {
                     args->size = size;
                     args->cli = requests->client;
                     args->timer = &last_send;
-                    args->thread_i = &free_threads[i];
+                    args->thread_i = &(free_threads[i]);
                     args->size_key = requests->size_key;
                     args->index = requests->index;
 
@@ -291,8 +299,8 @@ int main(int argc, char **argv) {
                     free(requests);
                     requests = next_request;
 
-                    pthread_create(&(threads[i]),NULL,&deal_new_request,(void *) args);
                     free_threads[i] = 0;
+                    pthread_create(&(threads[i]),NULL,&deal_new_request,(void *) args);
 
                     break;
 
@@ -314,7 +322,7 @@ void *deal_new_request(void * arguments){
     char * client_message = args->client_message;
     int client_sock = *(args->client_sock);
     uint8_t* files = args->files;
-    int size = args->size;
+    uint32_t size = args->size;
     int cli = args->cli;
     struct timeval * timer = args->timer;
     int * thread_i = args->thread_i;
@@ -343,7 +351,7 @@ void *deal_new_request(void * arguments){
         *(uint8_t *) p = (uint8_t) 0;
         p += sizeof(uint8_t);
 
-        *(uint32_t *) p = size;
+        *(uint32_t *) p = (uint32_t) size;
         p += sizeof(uint32_t);
 
 
@@ -352,10 +360,10 @@ void *deal_new_request(void * arguments){
         }
 
         uint32_t hafsize, hafkeysize;
-        hafsize = sqrt(size);
-        hafkeysize = sqrt(size_key);   //encrypt takes sizes such as the matrix is size*size
+        hafsize = (uint32_t) sqrt(size);
+        hafkeysize = (uint32_t) sqrt(size_key);   //encrypt takes sizes such as the matrix is size*size
 
-        encrypt(key,hafkeysize,index,&p,files,hafsize);
+        encrypt(&key,hafkeysize,index,&p,files,hafsize);
 
         int error;
         if (error = send(client_sock, server_message, sizeof(uint8_t) + sizeof(uint32_t) + size, 0) < 0) {
@@ -374,40 +382,28 @@ void *deal_new_request(void * arguments){
     free(args);
     gettimeofday(timer, NULL);
 }
+void encrypt(uint8_t** addr_key,uint32_t size_key,uint32_t index,char** server_message,uint8_t* files,uint32_t size) {
 
-void encrypt(uint8_t*keys,uint32_t size_key,uint32_t index,char** server_message,uint8_t* files,uint32_t size) {
-    // arriver a file => index, genre
-    files += sizeof(uint8_t)*index; // normalement on est a la bonne dimension?
+    char* copy_server_message = *server_message;
+    uint8_t * file = files + sizeof(uint8_t)*index;
 
-    uint32_t nmatrices = size/size_key;
+    uint8_t* key = *addr_key;
 
-    char* copy_server_message;
-    uint8_t* copy_files;
+    //print_matrix(key,size_key*size_key);
+    //print_matrix(file,size*size);
 
+    for (int i = 0; i < size*size; i++) {
+        uint8_t val = 0;
+        int i_file = i%size + i/size/size_key;
+        int i_key = i/size%size_key;
 
-    for (size_t i = 0; i < nmatrices; i++) {
-        for (size_t j = 0; j < nmatrices; j++) {  //savoir quelle *sousmatrice* on multiplie
-
-            for (size_t k = 0; k < size_key; k++) {  //savoir quelle case de la sousmatrice on calcule...
-                for (size_t l = 0; l < size_key; l++) { //c'estlong
-                    copy_server_message = *server_message;
-                    copy_files = files;
-
-                    copy_server_message += sizeof(uint8_t)*((size_key*size*i)+(size_key*j)+(size*k)+(l)); //on bouge le pointeur vers la case que l'on veut remplir.
-
-                    copy_files += sizeof(uint8_t)*((size_key*size *i)+(size_key *j));
-                    uint8_t sol = 0;
-                    for (size_t m = 0; m < size_key; m++) {  //le calcul en lui même
-                        uint8_t a =  *(uint8_t *) keys + ((k*size_key)+m)*sizeof(uint8_t);
-                        uint8_t b =  *(uint8_t *) copy_files + (l+(m*size)*sizeof(uint8_t));     //pas sur d'avoir récupéré correctement les valeurs
-                        sol += (uint8_t) a*b;
-                    }
-
-                    *(uint8_t*) copy_server_message = (uint8_t) sol;
-                }
-            }
+        for (int j = 0; j < size_key; j++) {
+            val += (uint8_t) (file[i_file+j*size] * key[j+i_key*size_key]);
         }
+        *(uint8_t *) (copy_server_message+i) = (uint8_t) val;
     }
+
+    //print_matrix((uint8_t *) *server_message,size*size);
 }
 
 

@@ -4,6 +4,7 @@
 
 #include "client.h"
 #include "debug.h"
+#include "log.h"
 
 
 int main(int argc, char **argv) {
@@ -144,7 +145,21 @@ int main(int argc, char **argv) {
 
                     server_message2 = malloc(*(uint32_t *)  (server_message1+ sizeof(uint8_t)));
 
-                    if(read(socket_desc, server_message2, (*(uint32_t *)  (server_message1+ sizeof(uint8_t)))) < 0){
+                    memset(server_message2, '\0', *(uint32_t *)  (server_message1+ sizeof(uint8_t)));
+
+                    uint32_t temp_size = *(uint32_t *)  (server_message1+ sizeof(uint8_t));
+                    int index_temp = 0;
+
+                    while (temp_size>65535){
+                        if(read(socket_desc, (char *) (server_message2+index_temp*65536), 65535) < 0){
+                            ERROR("Error while receiving server's msg");
+                            return -1;
+                        }
+                        temp_size-=65535;
+                        index_temp++;
+                    }
+
+                    if(read(socket_desc, (char*) (server_message2+index_temp*65536), (uint16_t) temp_size) < 0){
                         ERROR("Error while receiving server's msg");
                         return -1;
                     }
