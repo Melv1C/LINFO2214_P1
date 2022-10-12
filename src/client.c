@@ -106,12 +106,18 @@ int main(int argc, char **argv) {
     int nbre_request = 0;
     int nbre_respond = 0;
 
+    struct timeval tlist[rate*time];
+
     struct arg_struct * args = (struct arg_struct *) malloc(sizeof(struct arg_struct));
     args->nbre_request = &nbre_request;
     args->size = size;
     args->socket_desc = socket_desc;
     args->time = time;
     args->rate = rate;
+    args->tlist = tlist;
+
+    int totalrespt = 0;
+
 
     pthread_t threads;
     pthread_create(&(threads),NULL,&send_request,(void *) args);
@@ -129,9 +135,11 @@ int main(int argc, char **argv) {
 
         if (nbre_respond==nbre_request && (now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>time*SEC+SEC/rate){
             INFO("FINISH\n");
+            INFO("AvgRespTime = %d", totalrespt/nbre_respond);
             break;
         }else if (((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>time*SEC+SEC/rate)&((now.tv_sec - last_recv.tv_sec) * 1000000 + now.tv_usec - last_recv.tv_usec>3*SEC)) {
             INFO("NOT ALL RESPOND RECEIVED");
+            INFO("AvgRespTime = %d", totalrespt/nbre_respond);
             break;
         }
 
@@ -182,6 +190,13 @@ int main(int argc, char **argv) {
                     return -1;
                 }
 
+                struct timeval x;
+                gettimeofday(&x, NULL);
+                totalrespt += (x.tv_sec - tlist[nbre_respond].tv_sec)*SEC +  x.tv_usec - tlist[nbre_respond].tv_usec;
+
+                //INFO("Out %d",totalrespt/(nbre_respond+1));
+
+
                 DEBUG("SERVER RESPOND");
                 gettimeofday(&last_recv, NULL);
                 nbre_respond++;
@@ -224,6 +239,7 @@ void *send_request(void * arguments){
     int* nbre_request = args->nbre_request;
     int time = args->time;
     int rate = args->rate;
+    struct timeval * tlist = args->tlist;
 
     struct timeval now,start,last_send;
     gettimeofday(&start, NULL);
@@ -263,7 +279,7 @@ void *send_request(void * arguments){
                 ERROR("Unable to send message");
                 return -1;
             }
-
+            gettimeofday(&(tlist[*nbre_request]),NULL);
             DEBUG("REQUEST OF INDEX %d SEND", index);
             (*(nbre_request))++;
             gettimeofday(&last_send, NULL);

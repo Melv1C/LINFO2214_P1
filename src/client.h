@@ -19,9 +19,9 @@
 #include <pthread.h>
 
 int SEC = 1000000;
-uint32_t MAX_SIZE_T = 65535;
+int MAX_SIZE_FILE = 1024*1024;
 
-uint32_t MAX_SIZE_FILE = 1024*1024;
+uint32_t MAX_SIZE_T = 65535;
 
 struct arg_struct {
     int size;
@@ -29,6 +29,7 @@ struct arg_struct {
     int *nbre_request;
     int time;
     int rate;
+    struct timeval * tlist;
 };
 
 int main(int argc, char **argv);
