@@ -27,6 +27,7 @@ struct arg_struct {
     int *nbre_request;
     int time;
     int rate;
+    struct timeval * tlist;
 };
 
 int main(int argc, char **argv);
