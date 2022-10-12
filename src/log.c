@@ -5,6 +5,10 @@
 #include "log.h"
 
 void print_matrix(uint8_t* matrix, uint32_t size){
+
+    printf("MATRIX %d\n",(int)sqrt(size));
+
+
     for (int i = 0; i < sqrt(size); i++) {
         printf("| ");
         for (int j = 0; j < 10; j++) {

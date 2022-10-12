@@ -56,6 +56,8 @@ int main(int argc, char **argv) {
     //---------------------------------------------------------------------------------------------------
 
     int socket_desc;
+    fd_set readfds;
+    int max_sd;
     struct sockaddr_in server_addr;
 
     // Create socket:
@@ -116,8 +118,14 @@ int main(int argc, char **argv) {
 
     while (1) {
 
+        //clear the socket set
+        FD_ZERO(&readfds);
+
+        //add master socket to set
+        FD_SET(socket_desc, &readfds);
+        max_sd = socket_desc;
+
         gettimeofday(&now, NULL);
-        int poll_count = poll(arrayPoll, 1, 5);
 
         if (nbre_respond==nbre_request && (now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>time*SEC+SEC/rate){
             INFO("FINISH\n");
@@ -129,55 +137,68 @@ int main(int argc, char **argv) {
 
         //SI ON RECOIT UNE RESPOND DU SERVER
 
-        if (poll_count>0){
+        struct timeval tv = {0, 1000};
+        int activity = select( max_sd + 1 , &readfds , NULL , NULL , &tv);
 
-            if (arrayPoll[0].revents == POLLIN){
-                // Receive the server's response:
+        if (activity < 0)
+        {
+            ERROR("select error");
+            return -1;
+        }
 
-                memset(server_message1, '\0', sizeof(uint8_t) + sizeof(uint32_t));
+        //If something happened on the master socket ,
+        //then its an incoming connection
+        if (FD_ISSET(socket_desc, &readfds))
+        {
 
-                if(read(socket_desc, server_message1, (sizeof(uint8_t) + sizeof(uint32_t))) < 0) {
+            // Receive the server's response:
+
+            memset(server_message1, '\0', sizeof(uint8_t) + sizeof(uint32_t));
+            if(read(socket_desc, server_message1, (sizeof(uint8_t) + sizeof(uint32_t))) < 0) {
+                ERROR("Error while receiving server's msg");
+                return -1;
+            }
+
+            if(*(uint8_t *) server_message1 == 0 && (uint32_t) *(uint32_t *) (server_message1+ sizeof(uint8_t)) > 0 && (uint32_t) *(uint32_t *) (server_message1+ sizeof(uint8_t)) < (MAX_SIZE_FILE+9) ){ //ON VERIFIE LE CODE D'ERREUR
+
+                server_message2 = malloc(*(uint32_t *)  (server_message1+ sizeof(uint8_t)));
+
+                memset(server_message2, '\0', *(uint32_t *)  (server_message1+ sizeof(uint8_t)));
+
+                uint32_t temp_size = *(uint32_t *)  (server_message1+ sizeof(uint8_t));
+                int index_temp = 0;
+
+                while (temp_size> MAX_SIZE_T){
+                    if(read(socket_desc, (char *) (server_message2+index_temp*(MAX_SIZE_T)), MAX_SIZE_T) < 0){
+                        ERROR("Error while receiving server's msg");
+                        return -1;
+                    }
+                    temp_size-=MAX_SIZE_T;
+                    index_temp++;
+                }
+
+                if(read(socket_desc, (char*) (server_message2+index_temp*MAX_SIZE_T), (uint16_t) temp_size) < 0){
                     ERROR("Error while receiving server's msg");
                     return -1;
                 }
 
-                if(*(uint8_t *) server_message1 == 0 & *(uint32_t *) (server_message1+ sizeof(uint8_t)) > 0){ //ON VERIFIE LE CODE D'ERREUR
+                DEBUG("SERVER RESPOND");
+                gettimeofday(&last_recv, NULL);
+                nbre_respond++;
+                //DEBUG("%u",*(uint8_t *)  server_message1); // Code d'erreur
+                DEBUG("size : %u",*(uint32_t *)  (server_message1 + sizeof(uint8_t))); // size
+                DEBUG("matrice : %u",*(uint8_t *)  server_message2); // 1er elem de la matrice
 
-                    server_message2 = malloc(*(uint32_t *)  (server_message1+ sizeof(uint8_t)));
+                //print_matrix((uint8_t *)  server_message2,*(uint32_t *)  (server_message1 + sizeof(uint8_t)));
 
-                    memset(server_message2, '\0', *(uint32_t *)  (server_message1+ sizeof(uint8_t)));
+                free(server_message2);
 
-                    uint32_t temp_size = *(uint32_t *)  (server_message1+ sizeof(uint8_t));
-                    int index_temp = 0;
-
-                    while (temp_size>65535){
-                        if(read(socket_desc, (char *) (server_message2+index_temp*65536), 65535) < 0){
-                            ERROR("Error while receiving server's msg");
-                            return -1;
-                        }
-                        temp_size-=65535;
-                        index_temp++;
-                    }
-
-                    if(read(socket_desc, (char*) (server_message2+index_temp*65536), (uint16_t) temp_size) < 0){
-                        ERROR("Error while receiving server's msg");
-                        return -1;
-                    }
-
-                    DEBUG("SERVER RESPOND");
-                    gettimeofday(&last_recv, NULL);
-                    nbre_respond++;
-                    //DEBUG("%d",*(uint8_t *)  server_message1); // Code d'erreur
-                    DEBUG("size : %d",*(uint32_t *)  (server_message1 + sizeof(uint8_t))); // size
-                    DEBUG("matrice : %d",*(uint8_t *)  server_message2); // 1er elem de la matrice
-
-                    free(server_message2);
-
-                } else{
-                    //ERROR("RESPOND WITH WRONG ERROR CODE %d",*(uint8_t *)  server_message1);
+            } else{
+                if ((*(uint8_t *)  server_message1) == 0){
+                    //ERROR("RESPOND WITH WRONG SIZE : %u",*(uint32_t *) (server_message1+ sizeof(uint8_t)));
+                    //return -1;
                 }
-            }else{
-                ERROR("NOT A POLLIN %d",arrayPoll->revents);
+                //ERROR("RESPOND WITH WRONG ERROR CODE OR SIZE. ERROR CODE : %d SIZE : %d",*(uint8_t *)  server_message1,*(uint32_t *) (server_message1+ sizeof(uint8_t)));
             }
         }
     }

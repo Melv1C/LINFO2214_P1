@@ -19,7 +19,9 @@
 #include <pthread.h>
 
 int SEC = 1000000;
-int MAX_SIZE_FILE = 1024*1024;
+uint32_t MAX_SIZE_T = 65535;
+
+uint32_t MAX_SIZE_FILE = 1024*1024;
 
 struct arg_struct {
     int size;

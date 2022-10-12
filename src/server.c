@@ -365,6 +365,23 @@ void *deal_new_request(void * arguments){
 
         encrypt(&key,hafkeysize,index,&p,files,hafsize);
 
+        /*uint32_t temp_size = (uint32_t)  (sizeof(uint8_t) + sizeof(uint32_t) + size);
+        int index_temp = 0;
+        int error;
+        while (temp_size>MAX_SIZE_T){
+            if (error = send(client_sock, (char *) (server_message+index_temp*MAX_SIZE_T), MAX_SIZE_T, 0) < 0) {
+                ERROR("Can't send %d",error);
+                return -1;
+            }
+            temp_size-=MAX_SIZE_T;
+            index_temp++;
+        }
+        if (error = send(client_sock, (char *) (server_message+index_temp*MAX_SIZE_T), (uint16_t) temp_size, 0) < 0) {
+            ERROR("Can't send %d",error);
+            return -1;
+        }*/
+
+
         int error;
         if (error = send(client_sock, server_message, sizeof(uint8_t) + sizeof(uint32_t) + size, 0) < 0) {
             ERROR("Can't send %d",error);
@@ -394,11 +411,12 @@ void encrypt(uint8_t** addr_key,uint32_t size_key,uint32_t index,char** server_m
 
     for (int i = 0; i < size*size; i++) {
         uint8_t val = 0;
-        int i_file = i%size + i/size/size_key;
+        int i_file = i%size;
         int i_key = i/size%size_key;
+        int j_file = i/size/size_key;
 
         for (int j = 0; j < size_key; j++) {
-            val += (uint8_t) (file[i_file+j*size] * key[j+i_key*size_key]);
+            val += (uint8_t) (file[i_file+(j+j_file*size_key)*size] * key[j+i_key*size_key]);
         }
         *(uint8_t *) (copy_server_message+i) = (uint8_t) val;
     }

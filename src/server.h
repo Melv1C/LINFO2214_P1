@@ -22,9 +22,10 @@
 #include <errno.h>
 
 int SEC = 1000000;
-int MAX_SIZE_KEY = 128*128;
 
 int MAX_CLIENT = 100;
+
+uint32_t MAX_SIZE_T = 65535;
 
 struct arg_struct {
     int * client_sock;
