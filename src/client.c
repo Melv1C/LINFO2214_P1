@@ -135,10 +135,13 @@ int main(int argc, char **argv) {
 
         if (nbre_respond==nbre_request && (now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>time*SEC+SEC/rate){
             INFO("FINISH\n");
-            INFO("AvgRespTime = %d", totalrespt/nbre_respond);
+            if (nbre_respond == 0){nbre_respond = 1;}
+            INFO("AvgRespTime = %d µs", totalrespt/nbre_respond);
+            INFO("TotalRespTime = %d µs", totalrespt);
             break;
         }else if (((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec>time*SEC+SEC/rate)&((now.tv_sec - last_recv.tv_sec) * 1000000 + now.tv_usec - last_recv.tv_usec>3*SEC)) {
             INFO("NOT ALL RESPOND RECEIVED");
+            if (nbre_respond == 0){nbre_respond = 1;}
             INFO("AvgRespTime = %d", totalrespt/nbre_respond);
             break;
         }
@@ -193,8 +196,8 @@ int main(int argc, char **argv) {
                 struct timeval x;
                 gettimeofday(&x, NULL);
                 totalrespt += (x.tv_sec - tlist[nbre_respond].tv_sec)*SEC +  x.tv_usec - tlist[nbre_respond].tv_usec;
+                //INFO("return time: %d µs", (x.tv_sec - tlist[nbre_respond].tv_sec)*SEC +  x.tv_usec - tlist[nbre_respond].tv_usec);
 
-                //INFO("Out %d",totalrespt/(nbre_respond+1));
 
 
                 DEBUG("SERVER RESPOND");

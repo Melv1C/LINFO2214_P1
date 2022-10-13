@@ -37,6 +37,8 @@ struct arg_struct {
     int cli;
     struct timeval * timer;
     int * thread_i;
+    int * nbre_request;
+    int * max_req;
 };
 
 struct node

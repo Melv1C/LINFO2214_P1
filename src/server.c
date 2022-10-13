@@ -42,6 +42,8 @@ int main(int argc, char **argv) {
     uint32_t size = 1024;
     int port = 2241;
 
+    int nerror = 0;
+
     while ((opt = getopt(argc, argv, "j:s:p:")) != -1) {
         switch (opt) {
             case 'j':
@@ -55,6 +57,7 @@ int main(int argc, char **argv) {
                 break;
             default:
                 ERROR("PROBLEME AVEC LES ARGUMENTS");
+                //nerror+=1;
                 return -1;
 
         }
@@ -104,6 +107,7 @@ int main(int argc, char **argv) {
 
     if(socket_desc < 0){
         ERROR("Error while creating socket");
+        //nerror+=1;
         return -1;
     }
     DEBUG("Socket created successfully");
@@ -116,6 +120,7 @@ int main(int argc, char **argv) {
     // Bind to the set port and IP:
     if(bind(socket_desc, (struct sockaddr*)&server_addr, sizeof(server_addr))<0){
         ERROR("Couldn't bind to the port");
+        //nerror+=1;
         return -1;
     }
     DEBUG("Done with binding");
@@ -123,6 +128,7 @@ int main(int argc, char **argv) {
     // Listen for clients:
     if(listen(socket_desc, 5) < 0){
         ERROR("Error while listening");
+        //nerror+=1;
         return -1;
     }
     INFO("\n-----------     SERVER READY    -----------\n");
@@ -138,7 +144,10 @@ int main(int argc, char **argv) {
     }
 
     // STATS
-    int nbre_request = 0;
+    int nreq = 0;
+    int mreq = 0;
+    int * max_req = & mreq;
+    int * nbre_request = &nreq;
     int nbre_client = 0;
 
 
@@ -199,6 +208,7 @@ int main(int argc, char **argv) {
         if (activity < 0)
         {
             ERROR("select error");
+            //nerror+=1;
             return -1;
         }
 
@@ -209,6 +219,7 @@ int main(int argc, char **argv) {
             new_sock = accept(socket_desc, (struct sockaddr *) &client_addr, &client_size);
             if (new_sock < 0) {
                 ERROR("Can't accept");
+                //nerror+=1;
                 return -1;
             }
 
@@ -242,7 +253,7 @@ int main(int argc, char **argv) {
                 {
                     //Somebody disconnected , get his details and print
                     INFO("<== CLIENT %d OUT OF THE SERVER",i);
-
+                    INFO("Max buffer size = %d", *max_req);
                     //Close the socket and mark as 0 in list for reuse
                     close( sd );
                     client_sock[i] = 0;
@@ -256,12 +267,17 @@ int main(int argc, char **argv) {
 
                     if (read(sd,client_message2,*(uint32_t *) (client_message1+ sizeof(uint32_t)))<0){
                         ERROR("RECV");
+                        //nerror+=1;
                         return -1;
                     }
 
                     DEBUG("++++++++++ CLIENT %d   INDEX : %d", i,*(uint32_t *) client_message1);
+                    *nbre_request += 1;
+                    if (*nbre_request > *max_req){
+                        *max_req = *nbre_request;
 
-                    nbre_request++;
+                    }
+                    
                     if (requests == NULL){
                         requests = (struct node *) malloc(sizeof(struct node));
                         requests->client = i;
@@ -294,6 +310,8 @@ int main(int argc, char **argv) {
                     args->thread_i = &(free_threads[i]);
                     args->size_key = requests->size_key;
                     args->index = requests->index;
+                    args->nbre_request = nbre_request;
+                    args->max_req = max_req;
 
                     struct node * next_request = requests->next;
                     free(requests);
@@ -326,6 +344,8 @@ void *deal_new_request(void * arguments){
     int cli = args->cli;
     struct timeval * timer = args->timer;
     int * thread_i = args->thread_i;
+    int * nbre_request = args->nbre_request;
+    int * max_req = args->max_req;
 
     if (client_sock>0){
         char* server_message;
@@ -337,6 +357,17 @@ void *deal_new_request(void * arguments){
 
         index = args->index;
         size_key = args->size_key;
+
+        if (size<size_key || size%size_key != 0){
+            INFO("sizes = s %d, k %d", size, size_key);
+            ERROR("sizekey error");
+            *thread_i = 1;
+            free(args->client_message);
+            free(args);
+            *nbre_request -= 1;
+            
+            return -1;
+        }
 
         key = malloc(size_key);
 
@@ -355,9 +386,7 @@ void *deal_new_request(void * arguments){
         p += sizeof(uint32_t);
 
 
-        if (size<size_key || size%size_key != 0){
-            return -1;
-        }
+        
 
         uint32_t hafsize, hafkeysize;
         hafsize = (uint32_t) sqrt(size);
@@ -365,28 +394,17 @@ void *deal_new_request(void * arguments){
 
         encrypt(&key,hafkeysize,index,&p,files,hafsize);
 
-        /*uint32_t temp_size = (uint32_t)  (sizeof(uint8_t) + sizeof(uint32_t) + size);
-        int index_temp = 0;
-        int error;
-        while (temp_size>MAX_SIZE_T){
-            if (error = send(client_sock, (char *) (server_message+index_temp*MAX_SIZE_T), MAX_SIZE_T, 0) < 0) {
-                ERROR("Can't send %d",error);
-                return -1;
-            }
-            temp_size-=MAX_SIZE_T;
-            index_temp++;
-        }
-        if (error = send(client_sock, (char *) (server_message+index_temp*MAX_SIZE_T), (uint16_t) temp_size, 0) < 0) {
-            ERROR("Can't send %d",error);
-            return -1;
-        }*/
 
 
         int error;
         if (error = send(client_sock, server_message, sizeof(uint8_t) + sizeof(uint32_t) + size, 0) < 0) {
             ERROR("Can't send %d",error);
+            //nerror+=1;
             return -1;
         }
+        *nbre_request -= 1;
+
+        
 
         DEBUG("---------- CLIENT %d   INDEX : %d %d",cli,index,*(uint8_t *) (server_message + sizeof(uint32_t)+ sizeof(uint8_t)));
 
