@@ -16,19 +16,16 @@ SERVER_SOURCES = $(wildcard src/server.c src/log.c)
 CLIENT_OBJECTS = $(CLIENT_SOURCES:.c=.o)
 SERVER_OBJECTS = $(SERVER_SOURCES:.c=.o)
 
-CLIENT = client
-SERVER = server
-
-
-all: $(CLIENT) $(SERVER)
-$(CLIENT): $(CLIENT_OBJECTS)
-	$(CC) $(CLIENT_OBJECTS) -o $@ $(LDFLAGS)
-
-$(SERVER): $(SERVER_OBJECTS)
-	$(CC) $(SERVER_OBJECTS) -o $@ $(LDFLAGS)
-
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
+
+client: $(CLIENT_OBJECTS)
+	$(CC) $(CLIENT_OBJECTS) -o $@ $(LDFLAGS)
+
+server: $(SERVER_OBJECTS)
+	$(CC) $(SERVER_OBJECTS) -o $@ $(LDFLAGS)
+
+all: client server
 
 .PHONY: clean mrproper
 
@@ -36,7 +33,7 @@ clean:
 	rm -f $(CLIENT_OBJECTS) $(SERVER_OBJECTS)
 
 mrproper:
-	rm -f $(CLIENT) $(SERVER)
+	rm -f client server
 	rm -f 
 # It is likely that you will need to update this
 tests: all
@@ -47,12 +44,10 @@ debug: CFLAGS += -D_DEBUG
 debug: clean all
 
 # Place the zip in the parent repository of the project
-ZIP_NAME="../projet1_nom1_nom2.zip"
+ZIP_NAME="../projet1_claes_sirjacobs.zip"
 
 # A zip target, to help you have a proper zip file. You probably need to adapt this code.
 zip:
 	# Generate the log file stat now. Try to keep the repository clean.
-	git log --stat > gitlog.stat
-	zip -r $(ZIP_NAME) Makefile README.md src tests rapport.pdf gitlog.stat
-	# We remove it now, but you can leave it if you want.
-	rm gitlog.stat
+	zip -r $(ZIP_NAME) Makefile src rapport.pdf
+

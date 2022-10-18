@@ -8,6 +8,7 @@
 #endif //PROJET1_SERVER_H
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -23,12 +24,12 @@
 
 int SEC = 1000000;
 
-int MAX_CLIENT = 100;
+int MAX_CLIENT = 1000;
 
 uint32_t MAX_SIZE_T = 65535;
 
 struct arg_struct {
-    int * client_sock;
+    int client_sock;
     uint32_t index;
     uint32_t size_key;
     char* client_message;
@@ -44,7 +45,7 @@ struct arg_struct {
 struct node
 {
     int client;
-    int * socket;
+    int socket;
     char* message;
     uint32_t index;
     uint32_t size_key;
@@ -57,12 +58,14 @@ struct client_sock_list_node
     struct client_sock_list_node *next;
 };
 
-void push(struct node** head, int client, int * socket, char* client_message1,char* client_message2);
+void push(struct node** head, int client, int socket, char* client_message1,char* client_message2);
 
 int main(int argc, char **argv);
 
 void *deal_new_request(void * arguments);
 
 void encrypt(uint8_t** addr_key,uint32_t size_key,uint32_t index,char** server_message,uint8_t* files,uint32_t size);
+
+int IsPowerOfTwo(uint32_t x);
 
 

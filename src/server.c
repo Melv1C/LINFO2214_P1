@@ -7,7 +7,7 @@
 #include "debug.h"
 #include "log.h"
 
-void push(struct node ** head, int client, int* socket, char* client_message1, char* client_message2) {
+void push(struct node ** head, int client, int socket, char* client_message1, char* client_message2) {
     struct node * current = *head;
 
     int size = 1;
@@ -25,8 +25,6 @@ void push(struct node ** head, int client, int* socket, char* client_message1, c
     current->next->index = *(uint32_t *) client_message1;
     current->next->size_key = *(uint32_t *) (client_message1+ sizeof(uint32_t));
     current->next->next = NULL;
-
-    //INFO("BUFFER SIZE : %d",size);
 
 }
 
@@ -51,6 +49,10 @@ int main(int argc, char **argv) {
                 break;
             case 's':
                 size = (uint32_t) strtol(optarg,NULL,10);
+                if (!IsPowerOfTwo(size)){
+                    ERROR("The size must be a power of 2");
+                    return -1;
+                }
                 break;
             case 'p':
                 port = (int) strtol(optarg,NULL,10);
@@ -149,6 +151,8 @@ int main(int argc, char **argv) {
     int * max_req = & mreq;
     int * nbre_request = &nreq;
     int nbre_client = 0;
+    int size_buffer = 0;
+    int size_max_buffer = 0;
 
 
     //---------------------------------------------------------------------------------------------------
@@ -159,19 +163,32 @@ int main(int argc, char **argv) {
     gettimeofday(&start, NULL);
     gettimeofday(&last_send, NULL);
 
-    struct pollfd arrayPoll_server[1];
-    arrayPoll_server[0].fd = socket_desc;
-        arrayPoll_server[0].events = POLLIN;
-
-    struct pollfd arrayPoll_client[MAX_CLIENT];
-    for (int i = 0; i < MAX_CLIENT; i++) {
-        arrayPoll_client[i].fd = 0;
-        arrayPoll_client[i].events = POLLIN;
-    }
-
     struct node * requests = NULL; //LINKEDLIST REQUEST
 
     while(1){
+
+        gettimeofday(&now, NULL);
+        if ((now.tv_sec - last_send.tv_sec) * 1000000 + now.tv_usec - last_send.tv_usec>5*SEC){
+            INFO("STATS :");
+            INFO("SIZE MAX OF BUFFER : %d",size_max_buffer);
+            INFO("NUMBER OF CONNEXION : %d",nbre_client);
+            if (nbre_client>0){
+                FILE *f;
+                f = fopen("stat.txt", "a");
+                fprintf(f,"%d,%d,%d,%d\n",n_thread,size,size_max_buffer,nbre_client);
+                fclose(f);
+            }
+            //reset all
+            size_max_buffer = 0;
+            nbre_client = 0;
+            size_buffer = 0;
+            for (int i = 0; i < MAX_CLIENT; i++)
+            {
+                client_sock[i] = 0;
+            }
+            requests = NULL;
+            gettimeofday(&last_send, NULL);
+        }
 
         //clear the socket set
         FD_ZERO(&readfds);
@@ -230,7 +247,8 @@ int main(int argc, char **argv) {
                 if( client_sock[i] == 0 )
                 {
                     client_sock[i] = new_sock;
-                    INFO("==> CLIENT %d INTO THE SERVER",i);
+                    //INFO("==> New CLIENT INTO THE SERVER");
+                    nbre_client++;
                     break;
                 }
             }
@@ -249,17 +267,11 @@ int main(int argc, char **argv) {
                 client_message1 = malloc(2*sizeof(uint32_t));
 
                 int valread;
-                if ((valread = read( sd , client_message1, 2*sizeof(uint32_t))) == 0)
+                if ((valread = read( sd , client_message1, 2*sizeof(uint32_t))) < 0)
                 {
-                    //Somebody disconnected , get his details and print
-                    INFO("<== CLIENT %d OUT OF THE SERVER",i);
-                    INFO("Max buffer size = %d", *max_req);
-                    //Close the socket and mark as 0 in list for reuse
-                    close( sd );
-                    client_sock[i] = 0;
+                    ERROR("Read");
                 }
-
-                    //Echo back the message that came in
+                //Echo back the message that came in
                 else if (*(uint32_t *) (client_message1+ sizeof(uint32_t))>0)
                 {
                     char* client_message2;
@@ -271,27 +283,35 @@ int main(int argc, char **argv) {
                         return -1;
                     }
 
-                    DEBUG("++++++++++ CLIENT %d   INDEX : %d", i,*(uint32_t *) client_message1);
+                    DEBUG("++++++++++ NEW REQUEST OF INDEX : %d",*(uint32_t *) client_message1);
                     *nbre_request += 1;
                     if (*nbre_request > *max_req){
                         *max_req = *nbre_request;
-
                     }
                     
                     if (requests == NULL){
                         requests = (struct node *) malloc(sizeof(struct node));
                         requests->client = i;
-                        requests->socket = &(client_sock[i]);
+                        requests->socket = client_sock[i];
                         requests->message = client_message2;
                         requests->index = *(uint32_t *) client_message1;
                         requests->size_key = *(uint32_t *) (client_message1+ sizeof(uint32_t));
                         requests->next = NULL;
-                        //INFO("BUFFER SIZE : 1");
                     }else{
-                        push(&requests,i,&(client_sock[i]),client_message1,client_message2);
+                        push(&requests,i,client_sock[i],client_message1,client_message2);
                     }
 
+                    size_buffer++;
+                    if(size_buffer>size_max_buffer){
+                        size_max_buffer = size_buffer;
+                    }
+
+                    client_sock[i] = 0;
                     free(client_message1);
+
+                }else{
+                    ERROR("Wrong size :%d",*(uint32_t *) (client_message1+ sizeof(uint32_t)));
+                    nerror++;
                 }
             }
         }
@@ -317,11 +337,11 @@ int main(int argc, char **argv) {
                     free(requests);
                     requests = next_request;
 
+                    size_buffer--;
+
                     free_threads[i] = 0;
                     pthread_create(&(threads[i]),NULL,&deal_new_request,(void *) args);
-
                     break;
-
                 }
             }
         }
@@ -338,7 +358,7 @@ void *deal_new_request(void * arguments){
     struct arg_struct * args = arguments;
 
     char * client_message = args->client_message;
-    int client_sock = *(args->client_sock);
+    int client_sock = args->client_sock;
     uint8_t* files = args->files;
     uint32_t size = args->size;
     int cli = args->cli;
@@ -346,7 +366,6 @@ void *deal_new_request(void * arguments){
     int * thread_i = args->thread_i;
     int * nbre_request = args->nbre_request;
     int * max_req = args->max_req;
-
     if (client_sock>0){
         char* server_message;
         server_message = malloc(sizeof(uint8_t) + sizeof(uint32_t) + size);
@@ -357,6 +376,8 @@ void *deal_new_request(void * arguments){
 
         index = args->index;
         size_key = args->size_key;
+
+        size_key = size_key*size_key;
 
         if (size<size_key || size%size_key != 0){
             INFO("sizes = s %d, k %d", size, size_key);
@@ -385,16 +406,11 @@ void *deal_new_request(void * arguments){
         *(uint32_t *) p = (uint32_t) size;
         p += sizeof(uint32_t);
 
-
-        
-
         uint32_t hafsize, hafkeysize;
         hafsize = (uint32_t) sqrt(size);
         hafkeysize = (uint32_t) sqrt(size_key);   //encrypt takes sizes such as the matrix is size*size
 
         encrypt(&key,hafkeysize,index,&p,files,hafsize);
-
-
 
         int error;
         if (error = send(client_sock, server_message, sizeof(uint8_t) + sizeof(uint32_t) + size, 0) < 0) {
@@ -404,13 +420,16 @@ void *deal_new_request(void * arguments){
         }
         *nbre_request -= 1;
 
-        
-
         DEBUG("---------- CLIENT %d   INDEX : %d %d",cli,index,*(uint8_t *) (server_message + sizeof(uint32_t)+ sizeof(uint8_t)));
 
         free(key);
         free(server_message);
     }
+
+    close( client_sock );
+    client_sock = 0;
+    //INFO("<== CLIENT %d OUT OF THE SERVER",cli);
+    //INFO("Max buffer size = %d", *max_req);
 
     *thread_i = 1;
     free(args->client_message);
@@ -440,6 +459,12 @@ void encrypt(uint8_t** addr_key,uint32_t size_key,uint32_t index,char** server_m
     }
 
     //print_matrix((uint8_t *) *server_message,size*size);
+}
+
+
+int IsPowerOfTwo(uint32_t x)
+{
+    return (x != 0) && ((x & (x - 1)) == 0);
 }
 
 
