@@ -21,13 +21,14 @@
 #include <pthread.h>
 
 struct arg_struct {
-    int size;
+    uint32_t size;
     int time;
     int rate;
-    int * socket_desc;
+    char * ip;
+    int port;
     int * nbre_request;
-    struct timeval * tlist;
-    struct sockaddr_in* server_addr;
+    int * nbre_respond;
+    int * totalrespt;
 };
 
 int SEC = 1000000;
@@ -36,6 +37,6 @@ uint32_t MAX_SIZE_T = 65535;
 
 int main(int argc, char **argv);
 
-void *send_request(void * arguments);
+void *send_and_recv(void * arguments);
 
 int IsPowerOfTwo(uint32_t x);
