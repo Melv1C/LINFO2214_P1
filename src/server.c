@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
             INFO("NUMBER OF CONNEXION : %d",nbre_client);
             if (nbre_client>0){
                 FILE *f;
-                f = fopen("stat_server.txt", "a");
+                f = fopen("vm_stat_server.txt", "a");
                 fprintf(f,"%d,%d,%d,%d\n",n_thread, (int) sqrt(size),size_max_buffer,nbre_client);
                 fclose(f);
             }

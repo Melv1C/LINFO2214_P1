@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 
 
     FILE *f;
-    f = fopen("stat_client.txt", "a");
+    f = fopen("vm_stat_client.txt", "a");
     fprintf(f,"%d,%d,%d,%d,%d,%d\n",rate,time,(int) sqrt(size),nbre_respond,nbre_request,totalrespt/nbre_respond);
     fclose(f);
 
