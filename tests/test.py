@@ -3,7 +3,7 @@ from random import random
 from time import sleep
 
 n_thread = 1
-size = 4
+size = 16
 #for n_thread in range(1,5):
     #for size in [4,8,16,32,64,126,256,512,1024]:
 
@@ -15,7 +15,7 @@ for key_size in [2,4,8,16,32,64,128]:
         break
     else:
         for rate in [1,10,100,200,300,400,500,1000]:
-            for time in [1,3,5,10]:
+            for time in [1,3,5]:
                 os.system('./client -k {} -r {} -t {} 127.0.0.1:2241'.format(key_size,rate,time))
                 sleep(5)
 

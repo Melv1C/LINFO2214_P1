@@ -210,6 +210,7 @@ void *send_and_recv(void * arguments){
         ERROR("WRONG ERROR CODE OR SIZE");
     }
     free(server_message1);
+    close(socket_client);
 }
 
 int IsPowerOfTwo(uint32_t x)
