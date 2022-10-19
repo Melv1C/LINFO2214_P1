@@ -24,7 +24,7 @@
 
 int SEC = 1000000;
 
-int MAX_CLIENT = 1000;
+int MAX_CLIENT = 10000;
 
 uint32_t MAX_SIZE_T = 65535;
 
