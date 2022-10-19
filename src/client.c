@@ -88,14 +88,15 @@ int main(int argc, char **argv) {
             gettimeofday(&last_send, NULL);
         }
     }
-    INFO("WAIT PTHREAD JOIN");
+    //INFO("WAIT PTHREAD JOIN");
     for (int i = 0; i < nbre_threads; i++) {
         pthread_join(threads[i],NULL);
     }
     pthread_mutex_destroy(&lock);
     INFO("FINISH");
-    INFO("AvgRespTime = %d µs", totalrespt/nbre_respond);
-    INFO("Nbre of request : %d and respond : %d",nbre_request,nbre_respond);
+    //INFO("AvgRespTime = %d µs", totalrespt/nbre_respond);
+    //INFO("Nbre of request : %d and respond : %d",nbre_request,nbre_respond);
+
 
     FILE *f;
     f = fopen("stat_client.txt", "a");

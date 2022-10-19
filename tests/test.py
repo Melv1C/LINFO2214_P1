@@ -3,14 +3,14 @@ from random import random
 from time import sleep
 
 n_thread = 1
-size = 16
+size = 128
 #for n_thread in range(1,5):
     #for size in [4,8,16,32,64,126,256,512,1024]:
 
 os.system('./server -j {} -s {} -p 2241&'.format(n_thread,size))
 sleep(10)
 
-for key_size in [2,4,8,16,32,64,128]:
+for key_size in [16,32,64,128]:
     if key_size>size:
         break
     else:
