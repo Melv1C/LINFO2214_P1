@@ -4,7 +4,6 @@
 
 #include "client.h"
 #include "debug.h"
-#include "log.h"
 
 pthread_mutex_t lock;
 
@@ -47,8 +46,6 @@ int main(int argc, char **argv) {
     ip = strtok(argv[optind], ":");
     port = (int) strtol(strtok(NULL, ":"), NULL, 10);
 
-    INFO("Argument du client : size: %d, rate: %d, time: %d, ip: %s, port: %d", size, rate, time, ip, port);
-
     size = size * size;
 
     int nbre_request = 0;
@@ -67,7 +64,6 @@ int main(int argc, char **argv) {
         gettimeofday(&now, NULL);
 
         if ((now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec > time * SEC + SEC / rate) {
-            INFO("ALL thread created\n");
             break;
         } else if ((now.tv_sec - last_send.tv_sec) * 1000000 + now.tv_usec - last_send.tv_usec > SEC / rate) {
 
@@ -81,27 +77,15 @@ int main(int argc, char **argv) {
             args->nbre_respond = &nbre_respond;
             args->totalrespt = &totalrespt;
 
-            DEBUG("New thread");
-
             pthread_create(&(threads[nbre_threads]),NULL,&send_and_recv,(void *) args);
             nbre_threads++;
             gettimeofday(&last_send, NULL);
         }
     }
-    //INFO("WAIT PTHREAD JOIN");
     for (int i = 0; i < nbre_threads; i++) {
         pthread_join(threads[i],NULL);
     }
     pthread_mutex_destroy(&lock);
-    INFO("FINISH");
-    //INFO("AvgRespTime = %d µs", totalrespt/nbre_respond);
-    //INFO("Nbre of request : %d and respond : %d",nbre_request,nbre_respond);
-
-
-    FILE *f;
-    f = fopen("vm_stat_client.txt", "a");
-    fprintf(f,"%d,%d,%d,%d,%d,%d\n",rate,time,(int) sqrt(size),nbre_respond,nbre_request,totalrespt/nbre_respond);
-    fclose(f);
 
 }
 
@@ -203,8 +187,6 @@ void *send_and_recv(void * arguments){
 
         (*nbre_respond)++;
         pthread_mutex_unlock(&lock);
-
-        DEBUG("SERVER RESPOND 1er elem de la matrice : %d",*(uint8_t *) server_message2);
 
         free(server_message2);
     }else{

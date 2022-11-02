@@ -44,10 +44,10 @@ debug: CFLAGS += -D_DEBUG
 debug: clean all
 
 # Place the zip in the parent repository of the project
-ZIP_NAME="../projet1_claes_sirjacobs.zip"
+ZIP_NAME="../projet1_claes_sirjacobs..tar.gz"
 
 # A zip target, to help you have a proper zip file. You probably need to adapt this code.
-zip:
+tar:
 	# Generate the log file stat now. Try to keep the repository clean.
-	zip -r $(ZIP_NAME) Makefile src rapport.pdf
+	tar czvf $(ZIP_NAME) Makefile src
 

@@ -5,7 +5,6 @@
 
 #include "server.h"
 #include "debug.h"
-#include "log.h"
 
 void push(struct node ** head, int client, int socket, char* client_message1, char* client_message2) {
     struct node * current = *head;
@@ -64,9 +63,6 @@ int main(int argc, char **argv) {
 
         }
     }
-
-    INFO("Argument du server : n_thread: %d, size: %d, port: %d\n",n_thread,size,port);
-
     size = size*size;   //Plus pratique
 
     //---------------------------------------------------------------------------------------------------
@@ -112,7 +108,6 @@ int main(int argc, char **argv) {
         //nerror+=1;
         return -1;
     }
-    DEBUG("Socket created successfully");
 
     // Set port and IP:
     server_addr.sin_family = AF_INET;
@@ -125,7 +120,6 @@ int main(int argc, char **argv) {
         //nerror+=1;
         return -1;
     }
-    DEBUG("Done with binding");
 
     // Listen for clients:
     if(listen(socket_desc, 5) < 0){
@@ -133,7 +127,6 @@ int main(int argc, char **argv) {
         //nerror+=1;
         return -1;
     }
-    INFO("\n-----------     SERVER READY    -----------\n");
 
     client_size = sizeof(client_addr);
 
@@ -168,27 +161,6 @@ int main(int argc, char **argv) {
     while(1){
 
         gettimeofday(&now, NULL);
-        if ((now.tv_sec - last_send.tv_sec) * 1000000 + now.tv_usec - last_send.tv_usec>5*SEC){
-            INFO("STATS :");
-            INFO("SIZE MAX OF BUFFER : %d",size_max_buffer);
-            INFO("NUMBER OF CONNEXION : %d",nbre_client);
-            if (nbre_client>0){
-                FILE *f;
-                f = fopen("vm_stat_server.txt", "a");
-                fprintf(f,"%d,%d,%d,%d\n",n_thread, (int) sqrt(size),size_max_buffer,nbre_client);
-                fclose(f);
-            }
-            //reset all
-            size_max_buffer = 0;
-            nbre_client = 0;
-            size_buffer = 0;
-            for (int i = 0; i < MAX_CLIENT; i++)
-            {
-                client_sock[i] = 0;
-            }
-            requests = NULL;
-            gettimeofday(&last_send, NULL);
-        }
 
         //clear the socket set
         FD_ZERO(&readfds);
@@ -247,7 +219,6 @@ int main(int argc, char **argv) {
                 if( client_sock[i] == 0 )
                 {
                     client_sock[i] = new_sock;
-                    //INFO("==> New CLIENT INTO THE SERVER");
                     nbre_client++;
                     break;
                 }
@@ -283,7 +254,6 @@ int main(int argc, char **argv) {
                         return -1;
                     }
 
-                    DEBUG("++++++++++ NEW REQUEST OF INDEX : %d",*(uint32_t *) client_message1);
                     *nbre_request += 1;
                     if (*nbre_request > *max_req){
                         *max_req = *nbre_request;
@@ -346,11 +316,6 @@ int main(int argc, char **argv) {
             }
         }
     }
-
-    INFO("STATS:\n\nNonbre de client qui se sont connecté au server : %d\nNombre de request receive to the server : %d",nbre_client,nbre_request);
-    free(files);
-    return 0;
-
 }
 
 void *deal_new_request(void * arguments){
@@ -380,7 +345,6 @@ void *deal_new_request(void * arguments){
         size_key = size_key*size_key;
 
         if (size<size_key || size%size_key != 0){
-            INFO("sizes = s %d, k %d", size, size_key);
             ERROR("sizekey error");
             *thread_i = 1;
             free(args->client_message);
@@ -420,16 +384,12 @@ void *deal_new_request(void * arguments){
         }
         *nbre_request -= 1;
 
-        DEBUG("---------- CLIENT %d   INDEX : %d %d",cli,index,*(uint8_t *) (server_message + sizeof(uint32_t)+ sizeof(uint8_t)));
-
         free(key);
         free(server_message);
     }
 
     close( client_sock );
     client_sock = 0;
-    //INFO("<== CLIENT %d OUT OF THE SERVER",cli);
-    //INFO("Max buffer size = %d", *max_req);
 
     *thread_i = 1;
     free(args->client_message);
@@ -443,9 +403,6 @@ void encrypt(uint8_t** addr_key,uint32_t size_key,uint32_t index,char** server_m
 
     uint8_t* key = *addr_key;
 
-    //print_matrix(key,size_key*size_key);
-    //print_matrix(file,size*size);
-
     for (int i = 0; i < size*size; i++) {
         uint8_t val = 0;
         int i_file = i%size;
@@ -457,8 +414,6 @@ void encrypt(uint8_t** addr_key,uint32_t size_key,uint32_t index,char** server_m
         }
         *(uint8_t *) (copy_server_message+i) = (uint8_t) val;
     }
-
-    //print_matrix((uint8_t *) *server_message,size*size);
 }
 
 
