@@ -19,24 +19,21 @@
 #include <poll.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <stdint.h>
 
-struct arg_struct {
-    uint32_t size;
-    int time;
-    int rate;
-    char * ip;
-    int port;
-    int * nbre_request;
-    int * nbre_respond;
-    int * totalrespt;
-};
+#define ARRAY_TYPE uint32_t
+
+int MAX_VALUE_ARRAY_TYPE = UINT32_MAX;
+
+int n_files = 1000;
 
 int SEC = 1000000;
-int MAX_SIZE_FILE = 1024*1024;
-uint32_t MAX_SIZE_T = 65535;
+uint32_t MAX_SIZE_T = 65536;
+
+int getts();
 
 int main(int argc, char **argv);
 
-void *send_and_recv(void * arguments);
+void* rcv(void* r);
 
 int IsPowerOfTwo(uint32_t x);

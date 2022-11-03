@@ -4,15 +4,15 @@
 
 #include "log.h"
 
-void print_matrix(uint8_t* matrix, uint32_t size){
+void print_matrix(uint32_t * matrix, uint32_t size){
 
-    printf("MATRIX %d\n",(int)sqrt(size));
+    printf("MATRIX %d\n",size);
 
 
-    for (int i = 0; i < sqrt(size); i++) {
+    for (int i = 0; i < size; i++) {
         printf("| ");
-        for (int j = 0; j < 10; j++) {
-            printf("%u ",matrix[i*(int)sqrt(size)+j]);
+        for (int j = 0; j < size; j++) {
+            printf("%u ",matrix[i*size+j]);
         }
         printf(" |\n");
     }

@@ -21,50 +21,21 @@
 #include <pthread.h>
 #include <math.h>
 #include <errno.h>
+#include <stdint.h>
+
+#define ARRAY_TYPE uint32_t
+
+int MAX_VALUE_ARRAY_TYPE = UINT32_MAX;
+
+int n_files = 1000;
 
 int SEC = 1000000;
 
-int MAX_CLIENT = 10000;
-
-uint32_t MAX_SIZE_T = 65535;
-
-struct arg_struct {
-    int client_sock;
-    uint32_t index;
-    uint32_t size_key;
-    char* client_message;
-    uint8_t* files;
-    uint32_t size;
-    int cli;
-    struct timeval * timer;
-    int * thread_i;
-    int * nbre_request;
-    int * max_req;
-};
-
-struct node
-{
-    int client;
-    int socket;
-    char* message;
-    uint32_t index;
-    uint32_t size_key;
-    struct node *next;
-};
-
-struct client_sock_list_node
-{
-    int client_sock;
-    struct client_sock_list_node *next;
-};
-
-void push(struct node** head, int client, int socket, char* client_message1,char* client_message2);
+int getts();
 
 int main(int argc, char **argv);
 
-void *deal_new_request(void * arguments);
-
-void encrypt(uint8_t** addr_key,uint32_t size_key,uint32_t index,char** server_message,uint8_t* files,uint32_t size);
+int connection_handler(int socket_desc);
 
 int IsPowerOfTwo(uint32_t x);
 
