@@ -5,9 +5,10 @@
 
 #include "server.h"
 #include "debug.h"
-#include "log.h"
+//#include "log.h"
 
 int nbre_request = 0;
+int nbre_thread = 1;
 uint32_t size = 1024;
 int port = 2241;
 uint32_t square_size;
@@ -27,8 +28,11 @@ int main(int argc, char **argv) {
 
     int opt;
 
-    while ((opt = getopt(argc, argv, "s:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "j:s:p:")) != -1) {
         switch (opt) {
+            case 'j':
+                nbre_thread = (int) strtol(optarg,NULL,10);
+                break;
             case 's':
                 size = (uint32_t) strtol(optarg,NULL,10);
                 if (!IsPowerOfTwo(size)){
@@ -45,7 +49,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    INFO("Argument du server : size: %d, port: %d\n",size,port);
+    DEBUG("Argument du server : size: %d, port: %d\n",size,port);
 
     square_size = (uint32_t) size*size;   //Plus pratique
 
@@ -56,10 +60,15 @@ int main(int argc, char **argv) {
     files = malloc(sizeof(void*) * n_files);
     for (int i = 0 ; i < n_files; i++){
         files[i] = malloc(square_size *sizeof(ARRAY_TYPE));
+
         // Pour random les valeurs
         /*for (int j = 0; j < square_size; j++) {
             files[i][j] = (ARRAY_TYPE) rand() % MAX_VALUE_ARRAY_TYPE;
         }*/
+    }
+
+    for (unsigned i = 0; i < square_size; i++){
+        files[0][i] = i;
     }
 
     //print_matrix(files[0],size);
@@ -92,52 +101,24 @@ int main(int argc, char **argv) {
 
     DEBUG("Done with binding");
 
-    if ((listen(sockfd, 128)) != 0) {
+    if ((listen(sockfd, 1000)) != 0) {
         ERROR("Listen failed");
         return -1;
     }
 
-    INFO("---------SERVER IS READY---------");
+    DEBUG("---------SERVER IS READY---------");
 
     int nbre_client = 0;
 
     int client_sock;
     int c = sizeof(servaddr);
-    while(1) {
-
-        fd_set set;
-        FD_ZERO(&set); /* clear the set */
-        FD_SET(sockfd, &set); /* add our file descriptor to the set */
-        struct timeval timeout = {10, 0};
-        int activity = select( sockfd+1 , &set , NULL , NULL , &timeout);
-
-        if(activity<0){
-            ERROR("Select fonction");
-        } else if (activity == 0){
-            //timeout
-            char commande;
-            printf("Arreter le serveur ? [Y,N]");
-            scanf("%1s", &commande);
-            while (commande!='Y'&&commande!='N'){
-                printf("Veuillez indiquer soit Y pour arreter le serveur ou N pour qu'il continue à fonctionner\n");
-                printf("Arreter le serveur ? [Y,N]");
-                scanf("%1s", &commande);
-            }
-            if(commande=='Y'){
-                INFO("STATS:\n\nNonbre de client qui se sont connecté au server : %d\nNombre de request receive to the server : %d",nbre_client,nbre_request);
-                INFO("FINISH");
-                free(files);
-                return 0;
-            }
-        } else {
-            client_sock = accept(sockfd, (struct sockaddr *)&servaddr,(socklen_t*)&c);
-            if (client_sock < 0) {
-                ERROR("Can't accept");
-            }else{
-                nbre_client++;
-                if(connection_handler(client_sock)!=0){
-                    ERROR("error during connection handler for client sock %d, nbre of client %d",client_sock,nbre_client);
-                }
+    while(client_sock = accept(sockfd, (struct sockaddr *)&servaddr,(socklen_t*)&c)) {
+        if (client_sock < 0) {
+            ERROR("Can't accept");
+        }else{
+            nbre_client++;
+            if(connection_handler(client_sock)!=0){
+                ERROR("error during connection handler for client sock %d, nbre of client %d",client_sock,nbre_client);
             }
         }
     }
@@ -147,21 +128,19 @@ int connection_handler(int sockfd) {
 
     uint32_t fileid;
     int tread = recv(sockfd, &fileid, 4, 0);
+    fileid = ntohl(fileid);
     if(tread<0){
         ERROR("Error read fileid");
         return -1;
     }
 
-    DEBUG("NEW REQUEST ID %d",fileid);
-
     uint32_t keysz;
     tread = recv(sockfd, &keysz, 4, 0);
+    keysz = ntohl(keysz);
     if(tread<0){
         ERROR("Error read key size");
         return -1;
     }
-
-    DEBUG("NEW REQUEST SIZE %d",keysz);
 
     //Network byte order
     ARRAY_TYPE key[keysz*keysz];
@@ -198,15 +177,19 @@ int connection_handler(int sockfd) {
             }
         }
     }
+    /*print_matrix(file,size);
+    print_matrix(key,keysz);
+    print_matrix(crypted,size);*/
 
     uint8_t err = 0;
 
     send(sockfd, &err, 1,MSG_NOSIGNAL );
-    uint32_t sz = square_size * sizeof(ARRAY_TYPE);
+    unsigned sz = htonl(square_size * sizeof(ARRAY_TYPE));
     send(sockfd, &sz, 4, MSG_NOSIGNAL);
     send(sockfd, crypted, square_size * sizeof(ARRAY_TYPE),MSG_NOSIGNAL);
     //print_matrix(crypted,size);
     close(sockfd);
+    free(crypted);
 
     nbre_request++;
 

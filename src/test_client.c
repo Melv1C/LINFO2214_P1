@@ -2,15 +2,15 @@
 // Created by melvyn on 18/10/22.
 //
 
-#include "client.h"
+#include "test_client.h"
 #include "debug.h"
 //#include "log.h"
 
 pthread_mutex_t lock;
 
 uint32_t size = 128;
-int rate = 1;
-int run_time = 1;
+int rate = 100;
+int run_time = 10;
 char *ip = "127.0.0.1";
 int port = 2241;
 
@@ -30,7 +30,7 @@ int getts(){
 int main(int argc, char **argv) {
     int opt;
 
-    while ((opt = getopt(argc, argv, "k:r:t:")) != -1) {
+    while ((opt = getopt(argc, argv, "k:")) != -1) {
         switch (opt) {
             case 'k':
                 size = (uint32_t) strtol(optarg, NULL, 10);
@@ -38,15 +38,14 @@ int main(int argc, char **argv) {
                     ERROR("The size must be a power of 2");
                     return -1;
                 }
-                break;
-            case 'r':
-                rate = (int) strtol(optarg, NULL, 10);
-                break;
-            case 't':
-                run_time = (int) strtol(optarg, NULL, 10);
+                if(size == 128){
+                    rate = 25;
+                }else if (size==8){
+                    rate = 200;
+                }
                 break;
             default:
-                ERROR("Usage: %s [-k Key_size] [-r rate] [-t time]", argv[0]);
+                ERROR("Usage: %s [-k Key_size]", argv[0]);
                 return -1;
         }
     }
@@ -60,8 +59,6 @@ int main(int argc, char **argv) {
     port = (int) strtol(strtok(NULL, ":"), NULL, 10);
 
     DEBUG("Argument du client : size: %d, rate: %d, time: %d, ip: %s, port: %d", size, rate, run_time, ip, port);
-
-    uint32_t square_size = size * size;
 
     pthread_t threads[run_time*rate];
 
@@ -82,6 +79,7 @@ int main(int argc, char **argv) {
         nbre_threads++;
     }
 
+    INFO("Nbre respond in 10s : %d",nbre_respond);
     DEBUG("WAIT PTHREAD JOIN");
     for (int i = 0; i < nbre_threads; i++) {
         pthread_join(threads[i],NULL);
@@ -90,6 +88,7 @@ int main(int argc, char **argv) {
     DEBUG("FINISH");
     DEBUG("AvgRespTime = %u µs", totalrespt/nbre_respond);
     DEBUG("Nbre of request : %d and respond : %d",nbre_request,nbre_respond);
+
 
     free(sent_times);
     free(receive_times);
@@ -184,7 +183,6 @@ void* rcv(void* r) {
         totalrespt += receive_times[t]-sent_times[t];
         nbre_respond++;
         pthread_mutex_unlock(&lock);
-
     }
 
     free(key);

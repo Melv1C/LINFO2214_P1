@@ -8,7 +8,6 @@ void print_matrix(uint32_t * matrix, uint32_t size){
 
     printf("MATRIX %d\n",size);
 
-
     for (int i = 0; i < size; i++) {
         printf("| ");
         for (int j = 0; j < size; j++) {
