@@ -25,6 +25,17 @@
 
 #define ARRAY_TYPE uint32_t
 
+struct index_t {
+        int vstart;
+        int hstart;
+        int new_l;
+        int new_m;
+        int crypted_index;
+        int file_index;
+        uint32_t keysz;
+        uint32_t size;
+} __attribute__((aligned(32)));
+
 int MAX_VALUE_ARRAY_TYPE = UINT32_MAX;
 
 int MIN_SIZE_KEY = 8;
