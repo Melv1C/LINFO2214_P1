@@ -7,6 +7,8 @@
 #include "debug.h"
 //#include "log.h"
 
+#include <stdlib.h>
+
 int port = 2241;
 int nbre_thread = 1;
 uint32_t size = 1024;
@@ -210,10 +212,10 @@ int connection_handler(int sockfd) {
                         crypted[(vstart+k)*size + (hstart+new_m+7)] += a * file[(vstart+new_l)*size + (hstart+new_m+7)];
 
                         crypted[(vstart+k)*size + (hstart+new_m)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m)];
-                        crypted[(vstart+k)*size + (hstart+new_m+2)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+1)];
-                        crypted[(vstart+k)*size + (hstart+new_m+3)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+2)];
-                        crypted[(vstart+k)*size + (hstart+new_m+4)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+3)];
-                        crypted[(vstart+k)*size + (hstart+new_m+1)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+4)];
+                        crypted[(vstart+k)*size + (hstart+new_m+1)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+1)];
+                        crypted[(vstart+k)*size + (hstart+new_m+2)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+2)];
+                        crypted[(vstart+k)*size + (hstart+new_m+3)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+3)];
+                        crypted[(vstart+k)*size + (hstart+new_m+4)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+4)];
                         crypted[(vstart+k)*size + (hstart+new_m+5)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+5)];
                         crypted[(vstart+k)*size + (hstart+new_m+6)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+6)];
                         crypted[(vstart+k)*size + (hstart+new_m+7)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+7)];
