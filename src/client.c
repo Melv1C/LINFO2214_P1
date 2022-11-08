@@ -121,8 +121,8 @@ void* rcv(void* r) {
         exit(EXIT_FAILURE);
     }
     //Send file id
-    unsigned fileindex = htonl(rand() % n_files);
-    //unsigned fileindex = htonl(0);
+    //unsigned fileindex = htonl(rand() % n_files);
+    unsigned fileindex = htonl(0);
     ret = send(sockfd, &fileindex, 4, 0);
     if (ret<0){
         ERROR("Error while sending fileindex");

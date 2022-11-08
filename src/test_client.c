@@ -106,7 +106,8 @@ void* rcv(void* r) {
     // Creating socket file descriptor
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
         ERROR("socket creation failed");
-        exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
+        return ;
     }
     struct sockaddr_in servaddr;
     memset(&servaddr, 0, sizeof(servaddr));
@@ -117,7 +118,8 @@ void* rcv(void* r) {
 
     if(connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr))<0){
         ERROR("Unable to connect");
-        exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
+        return;
     }
     //Send file id
     unsigned fileindex = htonl(rand() % n_files);

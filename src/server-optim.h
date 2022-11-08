@@ -28,7 +28,7 @@
 struct index_t {
         int vstart;
         int hstart;
-        int new_l;
+        int new_k;
         int new_m;
         int crypted_index;
         int file_index;

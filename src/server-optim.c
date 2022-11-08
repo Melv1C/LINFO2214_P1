@@ -109,8 +109,6 @@ int main(int argc, char **argv) {
 
     DEBUG("---------SERVER IS READY---------");
 
-    int nbre_client = 0;
-
     int client_sock;
     int c = sizeof(servaddr);
     while(client_sock = accept(sockfd, (struct sockaddr *)&servaddr,(socklen_t*)&c)) {
@@ -119,9 +117,8 @@ int main(int argc, char **argv) {
         if (client_sock < 0) {
             ERROR("Can't accept");
         }else{
-            nbre_client++;
             if(connection_handler(client_sock)!=0){
-                ERROR("error during connection handler for client sock %d, nbre of client %d",client_sock,nbre_client);
+                ERROR("error during connection handler for client sock %d",client_sock);
             }
         }
     }
@@ -157,150 +154,79 @@ int connection_handler(int sockfd) {
         done += tread;
     }
 
-    /*int nr = size / keysz;
-    ARRAY_TYPE* file = files[fileid % n_files];
-    ARRAY_TYPE* crypted = calloc(size*size,sizeof(ARRAY_TYPE));
-    //Compute sub-matrices
-    for (int i = 0; i < nr ; i ++) {
-        int vstart = i * keysz;
-        for (int j = 0; j < nr; j++) {
-            int hstart = j * keysz;
-            //Do the sub-matrix multiplication
-            for (int k = 0; k < keysz; k++) {
-                for (int l = 0; l < keysz; l++) {
-                    int a = key[k*keysz + l];
-                    for (int m = 0; m < keysz; m++) {
-                        crypted[(vstart+k)*size + (hstart+m)] += a * file[(vstart+l)*size + (hstart+m)];
-                    }
-                }
-            }
-        }
-    }*/
-
     int nr = size / keysz;
     ARRAY_TYPE* file = files[fileid % n_files];
-    ARRAY_TYPE* crypted = calloc(size*size,sizeof(ARRAY_TYPE));
+    ARRAY_TYPE* crypted = malloc(size*size*sizeof(ARRAY_TYPE));
     //Compute sub-matrices
     struct index_t index;
     index.size = size;
     index.keysz = keysz;
-    for (int i = 0; i < nr ; i ++) {
-        index.vstart = i * index.keysz;
-        for (int j = 0; j < nr; j++) {
-            index.hstart = j * index.keysz;
+    for (int v = 0; v < nr ; v ++) {
+        index.vstart = v * index.keysz;
+        for (int h = 0; h < nr; h++) {
+            index.hstart = h * index.keysz;
             //Do the sub-matrix multiplication
-            for (int k = 0; k < index.keysz; k++) {
-                for (int l = 0; l < index.keysz/MIN_SIZE_KEY; l++) {
-                    index.new_l = l*MIN_SIZE_KEY;
-                    for (int m = 0; m < index.keysz/MIN_SIZE_KEY; m++) {
-
-                        index.new_m = m*MIN_SIZE_KEY;
-
-                        int a = key[k*index.keysz + index.new_l];
-                        index.crypted_index = (index.vstart+k)*index.size + (index.hstart+index.new_m);
-                        index.file_index = (index.vstart+index.new_l)*index.size + (index.hstart+index.new_m);
-
-                        crypted[index.crypted_index] += a * file[index.file_index];
-                        crypted[index.crypted_index+1] += a * file[index.file_index+1];
-                        crypted[index.crypted_index+2] += a * file[index.file_index+2];
-                        crypted[index.crypted_index+3] += a * file[index.file_index+3];
-                        crypted[index.crypted_index+4] += a * file[index.file_index+4];
-                        crypted[index.crypted_index+5] += a * file[index.file_index+5];
-                        crypted[index.crypted_index+6] += a * file[index.file_index+6];
-                        crypted[index.crypted_index+7] += a * file[index.file_index+7];
-
-                        a = key[k*index.keysz + index.new_l+1];
-                        index.file_index = (index.vstart+index.new_l+1)*index.size + (index.hstart+index.new_m);
-
-                        crypted[index.crypted_index] += a * file[index.file_index];
-                        crypted[index.crypted_index+1] += a * file[index.file_index+1];
-                        crypted[index.crypted_index+2] += a * file[index.file_index+2];
-                        crypted[index.crypted_index+3] += a * file[index.file_index+3];
-                        crypted[index.crypted_index+4] += a * file[index.file_index+4];
-                        crypted[index.crypted_index+5] += a * file[index.file_index+5];
-                        crypted[index.crypted_index+6] += a * file[index.file_index+6];
-                        crypted[index.crypted_index+7] += a * file[index.file_index+7];
-
-                        a = key[k*index.keysz + index.new_l+2];
-                        index.file_index = (index.vstart+index.new_l+2)*index.size + (index.hstart+index.new_m);
-
-                        crypted[index.crypted_index] += a * file[index.file_index];
-                        crypted[index.crypted_index+1] += a * file[index.file_index+1];
-                        crypted[index.crypted_index+2] += a * file[index.file_index+2];
-                        crypted[index.crypted_index+3] += a * file[index.file_index+3];
-                        crypted[index.crypted_index+4] += a * file[index.file_index+4];
-                        crypted[index.crypted_index+5] += a * file[index.file_index+5];
-                        crypted[index.crypted_index+6] += a * file[index.file_index+6];
-                        crypted[index.crypted_index+7] += a * file[index.file_index+7];
-
-                        a = key[k*index.keysz + index.new_l+3];
-                        index.file_index = (index.vstart+index.new_l+3)*index.size + (index.hstart+index.new_m);
-
-                        crypted[index.crypted_index] += a * file[index.file_index];
-                        crypted[index.crypted_index+1] += a * file[index.file_index+1];
-                        crypted[index.crypted_index+2] += a * file[index.file_index+2];
-                        crypted[index.crypted_index+3] += a * file[index.file_index+3];
-                        crypted[index.crypted_index+4] += a * file[index.file_index+4];
-                        crypted[index.crypted_index+5] += a * file[index.file_index+5];
-                        crypted[index.crypted_index+6] += a * file[index.file_index+6];
-                        crypted[index.crypted_index+7] += a * file[index.file_index+7];
-
-                        a = key[k*index.keysz + index.new_l+4];
-                        index.file_index = (index.vstart+index.new_l+4)*index.size + (index.hstart+index.new_m);
-
-                        crypted[index.crypted_index] += a * file[index.file_index];
-                        crypted[index.crypted_index+1] += a * file[index.file_index+1];
-                        crypted[index.crypted_index+2] += a * file[index.file_index+2];
-                        crypted[index.crypted_index+3] += a * file[index.file_index+3];
-                        crypted[index.crypted_index+4] += a * file[index.file_index+4];
-                        crypted[index.crypted_index+5] += a * file[index.file_index+5];
-                        crypted[index.crypted_index+6] += a * file[index.file_index+6];
-                        crypted[index.crypted_index+7] += a * file[index.file_index+7];
-
-                        a = key[k*index.keysz + index.new_l+5];
-                        index.file_index = (index.vstart+index.new_l+5)*index.size + (index.hstart+index.new_m);
-
-                        crypted[index.crypted_index] += a * file[index.file_index];
-                        crypted[index.crypted_index+1] += a * file[index.file_index+1];
-                        crypted[index.crypted_index+2] += a * file[index.file_index+2];
-                        crypted[index.crypted_index+3] += a * file[index.file_index+3];
-                        crypted[index.crypted_index+4] += a * file[index.file_index+4];
-                        crypted[index.crypted_index+5] += a * file[index.file_index+5];
-                        crypted[index.crypted_index+6] += a * file[index.file_index+6];
-                        crypted[index.crypted_index+7] += a * file[index.file_index+7];
-
-                        a = key[k*index.keysz + index.new_l+6];
-                        index.file_index = (index.vstart+index.new_l+6)*index.size + (index.hstart+index.new_m);
-
-                        crypted[index.crypted_index] += a * file[index.file_index];
-                        crypted[index.crypted_index+1] += a * file[index.file_index+1];
-                        crypted[index.crypted_index+2] += a * file[index.file_index+2];
-                        crypted[index.crypted_index+3] += a * file[index.file_index+3];
-                        crypted[index.crypted_index+4] += a * file[index.file_index+4];
-                        crypted[index.crypted_index+5] += a * file[index.file_index+5];
-                        crypted[index.crypted_index+6] += a * file[index.file_index+6];
-                        crypted[index.crypted_index+7] += a * file[index.file_index+7];
-
-                        a = key[k*index.keysz + index.new_l+7];
-                        index.file_index = (index.vstart+index.new_l+7)*index.size + (index.hstart+index.new_m);
-
-                        crypted[index.crypted_index] += a * file[index.file_index];
-                        crypted[index.crypted_index+1] += a * file[index.file_index+1];
-                        crypted[index.crypted_index+2] += a * file[index.file_index+2];
-                        crypted[index.crypted_index+3] += a * file[index.file_index+3];
-                        crypted[index.crypted_index+4] += a * file[index.file_index+4];
-                        crypted[index.crypted_index+5] += a * file[index.file_index+5];
-                        crypted[index.crypted_index+6] += a * file[index.file_index+6];
-                        crypted[index.crypted_index+7] += a * file[index.file_index+7];
+            ARRAY_TYPE * Bcolj = malloc(keysz*sizeof(ARRAY_TYPE));
+            for (int j = 0; j < index.keysz; j++) {
+                if (keysz == MIN_SIZE_KEY){
+                    Bcolj[0] = file[(index.vstart)*index.size + j + index.hstart];
+                    Bcolj[1] = file[(1+index.vstart)*index.size + j + index.hstart];
+                    Bcolj[2] = file[(2+index.vstart)*index.size + j + index.hstart];
+                    Bcolj[3] = file[(3+index.vstart)*index.size + j + index.hstart];
+                    Bcolj[4] = file[(4+index.vstart)*index.size + j + index.hstart];
+                    Bcolj[5] = file[(5+index.vstart)*index.size + j + index.hstart];
+                    Bcolj[6] = file[(6+index.vstart)*index.size + j + index.hstart];
+                    Bcolj[7] = file[(7+index.vstart)*index.size + j + index.hstart];
+                } else{
+                    for (int k = 0; k < index.keysz/MIN_SIZE_KEY; k++){
+                        index.new_k = k*MIN_SIZE_KEY;
+                        Bcolj[index.new_k] = file[(index.new_k+index.vstart)*index.size + j + index.hstart];
+                        Bcolj[index.new_k+1] = file[(index.new_k+1+index.vstart)*index.size + j + index.hstart];
+                        Bcolj[index.new_k+2] = file[(index.new_k+2+index.vstart)*index.size + j + index.hstart];
+                        Bcolj[index.new_k+3] = file[(index.new_k+3+index.vstart)*index.size + j + index.hstart];
+                        Bcolj[index.new_k+4] = file[(index.new_k+4+index.vstart)*index.size + j + index.hstart];
+                        Bcolj[index.new_k+5] = file[(index.new_k+5+index.vstart)*index.size + j + index.hstart];
+                        Bcolj[index.new_k+6] = file[(index.new_k+6+index.vstart)*index.size + j + index.hstart];
+                        Bcolj[index.new_k+7] = file[(index.new_k+7+index.vstart)*index.size + j + index.hstart];
                     }
                 }
+
+                for (int i = 0; i < index.keysz; i++) {
+                    ARRAY_TYPE s = 0;
+                    if (keysz == MIN_SIZE_KEY){
+                        s += key[i*index.keysz] * Bcolj[0];
+                        s += key[i*index.keysz + 1] * Bcolj[1];
+                        s += key[i*index.keysz + 2] * Bcolj[2];
+                        s += key[i*index.keysz + 3] * Bcolj[3];
+                        s += key[i*index.keysz + 4] * Bcolj[4];
+                        s += key[i*index.keysz + 5] * Bcolj[5];
+                        s += key[i*index.keysz + 6] * Bcolj[6];
+                        s += key[i*index.keysz + 7] * Bcolj[7];
+                    }else{
+                        for (int k = 0; k < index.keysz/MIN_SIZE_KEY; k++){
+                            index.new_k = k*MIN_SIZE_KEY;
+                            s += key[i*index.keysz + index.new_k] * Bcolj[index.new_k];
+                            s += key[i*index.keysz + index.new_k+1] * Bcolj[index.new_k+1];
+                            s += key[i*index.keysz + index.new_k+2] * Bcolj[index.new_k+2];
+                            s += key[i*index.keysz + index.new_k+3] * Bcolj[index.new_k+3];
+                            s += key[i*index.keysz + index.new_k+4] * Bcolj[index.new_k+4];
+                            s += key[i*index.keysz + index.new_k+5] * Bcolj[index.new_k+5];
+                            s += key[i*index.keysz + index.new_k+6] * Bcolj[index.new_k+6];
+                            s += key[i*index.keysz + index.new_k+7] * Bcolj[index.new_k+7];
+                        }
+                    }
+                    crypted[(i+index.vstart)*index.size + j + index.hstart] = s;
+                }
             }
+            free(Bcolj);
         }
     }
 
-    /*print_matrix(file,size);
-    print_matrix(key,keysz);
-    print_matrix(crypted,size);*/
+
+
+    //print_matrix(file,size);
+    //print_matrix(key,keysz);
+    //print_matrix(crypted,size);
 
     uint8_t err = 0;
 

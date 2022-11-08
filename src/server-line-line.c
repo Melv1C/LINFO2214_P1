@@ -149,22 +149,23 @@ int connection_handler(int sockfd) {
 
     int nr = size / keysz;
     ARRAY_TYPE* file = files[fileid % n_files];
-    ARRAY_TYPE* crypted = malloc(square_size * sizeof(ARRAY_TYPE));
+    ARRAY_TYPE* crypted = malloc(size*size*sizeof(ARRAY_TYPE));
     //Compute sub-matrices
-    for (int i = 0; i < nr ; i ++) {
-        int vstart = i * keysz;
-        for (int j = 0; j < nr; j++) {
-            int hstart = j * keysz;
+    for (int v = 0; v < nr ; v ++) {
+        int vstart = v * keysz;
+        for (int h = 0; h < nr; h++) {
+            int hstart = h * keysz;
             //Do the sub-matrix multiplication
-            for (int ln = 0; ln < keysz; ln++) {
-                int aline = (vstart + ln) * size + hstart;
-                for (int col = 0; col < keysz; col++) {
-                    int tot = 0;
-                    for (int k = 0; k < keysz; k++) {
-                        int vline = (vstart + k) * size + hstart;
-                        tot += key[ln * keysz + k] * file[vline + col];
-                    }
-                    crypted[aline + col] = tot;
+            ARRAY_TYPE Bcolj[keysz];
+            for (int j = 0; j < keysz; j++) {
+                for (int k = 0; k < keysz; k++)
+                    Bcolj[k] = file[(k+vstart)*size + j + hstart];
+
+                for (int i = 0; i < keysz; i++) {
+                    ARRAY_TYPE s = 0;
+                    for (int k = 0; k < keysz; k++)
+                        s += key[i*keysz + k] * Bcolj[k];
+                    crypted[(i+vstart)*size + j + hstart] = s;
                 }
             }
         }
