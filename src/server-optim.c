@@ -7,8 +7,6 @@
 #include "debug.h"
 //#include "log.h"
 
-#include <stdlib.h>
-
 int port = 2241;
 int nbre_thread = 1;
 uint32_t size = 1024;
@@ -191,88 +189,107 @@ int connection_handler(int sockfd) {
             for (int k = 0; k < keysz; k++) {
                 for (int l = 0; l < keysz/MIN_SIZE_KEY; l++) {
                     int new_l = l*MIN_SIZE_KEY;
-                    int a = key[k*keysz + new_l];
-                    int a1 = key[k*keysz + new_l+1];
-                    int a2 = key[k*keysz + new_l+2];
-                    int a3 = key[k*keysz + new_l+3];
-                    int a4 = key[k*keysz + new_l+4];
-                    int a5 = key[k*keysz + new_l+5];
-                    int a6 = key[k*keysz + new_l+6];
-                    int a7 = key[k*keysz + new_l+7];
 
                     for (int m = 0; m < keysz/MIN_SIZE_KEY; m++) {
+
                         int new_m = m*MIN_SIZE_KEY;
-                        crypted[(vstart+k)*size + (hstart+new_m)] += a * file[(vstart+new_l)*size + (hstart+new_m)];
-                        crypted[(vstart+k)*size + (hstart+new_m+1)] += a * file[(vstart+new_l)*size + (hstart+new_m+1)];
-                        crypted[(vstart+k)*size + (hstart+new_m+2)] += a * file[(vstart+new_l)*size + (hstart+new_m+2)];
-                        crypted[(vstart+k)*size + (hstart+new_m+3)] += a * file[(vstart+new_l)*size + (hstart+new_m+3)];
-                        crypted[(vstart+k)*size + (hstart+new_m+4)] += a * file[(vstart+new_l)*size + (hstart+new_m+4)];
-                        crypted[(vstart+k)*size + (hstart+new_m+5)] += a * file[(vstart+new_l)*size + (hstart+new_m+5)];
-                        crypted[(vstart+k)*size + (hstart+new_m+6)] += a * file[(vstart+new_l)*size + (hstart+new_m+6)];
-                        crypted[(vstart+k)*size + (hstart+new_m+7)] += a * file[(vstart+new_l)*size + (hstart+new_m+7)];
 
-                        crypted[(vstart+k)*size + (hstart+new_m)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m)];
-                        crypted[(vstart+k)*size + (hstart+new_m+1)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+1)];
-                        crypted[(vstart+k)*size + (hstart+new_m+2)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+2)];
-                        crypted[(vstart+k)*size + (hstart+new_m+3)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+3)];
-                        crypted[(vstart+k)*size + (hstart+new_m+4)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+4)];
-                        crypted[(vstart+k)*size + (hstart+new_m+5)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+5)];
-                        crypted[(vstart+k)*size + (hstart+new_m+6)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+6)];
-                        crypted[(vstart+k)*size + (hstart+new_m+7)] += a1 * file[(vstart+new_l+1)*size + (hstart+new_m+7)];
+                        int a = key[k*keysz + new_l];
+                        int crypted_index = (vstart+k)*size + (hstart+new_m);
+                        int file_index = (vstart+new_l)*size + (hstart+new_m);
 
-                        crypted[(vstart+k)*size + (hstart+new_m)] += a2 * file[(vstart+new_l+2)*size + (hstart+new_m)];
-                        crypted[(vstart+k)*size + (hstart+new_m+1)] += a2 * file[(vstart+new_l+2)*size + (hstart+new_m+1)];
-                        crypted[(vstart+k)*size + (hstart+new_m+2)] += a2 * file[(vstart+new_l+2)*size + (hstart+new_m+2)];
-                        crypted[(vstart+k)*size + (hstart+new_m+3)] += a2 * file[(vstart+new_l+2)*size + (hstart+new_m+3)];
-                        crypted[(vstart+k)*size + (hstart+new_m+4)] += a2 * file[(vstart+new_l+2)*size + (hstart+new_m+4)];
-                        crypted[(vstart+k)*size + (hstart+new_m+5)] += a2 * file[(vstart+new_l+2)*size + (hstart+new_m+5)];
-                        crypted[(vstart+k)*size + (hstart+new_m+6)] += a2 * file[(vstart+new_l+2)*size + (hstart+new_m+6)];
-                        crypted[(vstart+k)*size + (hstart+new_m+7)] += a2 * file[(vstart+new_l+2)*size + (hstart+new_m+7)];
+                        crypted[crypted_index] += a * file[file_index];
+                        crypted[crypted_index+1] += a * file[file_index+1];
+                        crypted[crypted_index+2] += a * file[file_index+2];
+                        crypted[crypted_index+3] += a * file[file_index+3];
+                        crypted[crypted_index+4] += a * file[file_index+4];
+                        crypted[crypted_index+5] += a * file[file_index+5];
+                        crypted[crypted_index+6] += a * file[file_index+6];
+                        crypted[crypted_index+7] += a * file[file_index+7];
 
-                        crypted[(vstart+k)*size + (hstart+new_m)] += a3 * file[(vstart+new_l+3)*size + (hstart+new_m)];
-                        crypted[(vstart+k)*size + (hstart+new_m+1)] += a3 * file[(vstart+new_l+3)*size + (hstart+new_m+1)];
-                        crypted[(vstart+k)*size + (hstart+new_m+2)] += a3 * file[(vstart+new_l+3)*size + (hstart+new_m+2)];
-                        crypted[(vstart+k)*size + (hstart+new_m+3)] += a3 * file[(vstart+new_l+3)*size + (hstart+new_m+3)];
-                        crypted[(vstart+k)*size + (hstart+new_m+4)] += a3 * file[(vstart+new_l+3)*size + (hstart+new_m+4)];
-                        crypted[(vstart+k)*size + (hstart+new_m+5)] += a3 * file[(vstart+new_l+3)*size + (hstart+new_m+5)];
-                        crypted[(vstart+k)*size + (hstart+new_m+6)] += a3 * file[(vstart+new_l+3)*size + (hstart+new_m+6)];
-                        crypted[(vstart+k)*size + (hstart+new_m+7)] += a3 * file[(vstart+new_l+3)*size + (hstart+new_m+7)];
+                        a = key[k*keysz + new_l+1];
+                        file_index = (vstart+new_l+1)*size + (hstart+new_m);
 
-                        crypted[(vstart+k)*size + (hstart+new_m)] += a4 * file[(vstart+new_l+4)*size + (hstart+new_m)];
-                        crypted[(vstart+k)*size + (hstart+new_m+1)] += a4 * file[(vstart+new_l+4)*size + (hstart+new_m+1)];
-                        crypted[(vstart+k)*size + (hstart+new_m+2)] += a4 * file[(vstart+new_l+4)*size + (hstart+new_m+2)];
-                        crypted[(vstart+k)*size + (hstart+new_m+3)] += a4 * file[(vstart+new_l+4)*size + (hstart+new_m+3)];
-                        crypted[(vstart+k)*size + (hstart+new_m+4)] += a4 * file[(vstart+new_l+4)*size + (hstart+new_m+4)];
-                        crypted[(vstart+k)*size + (hstart+new_m+5)] += a4 * file[(vstart+new_l+4)*size + (hstart+new_m+5)];
-                        crypted[(vstart+k)*size + (hstart+new_m+6)] += a4 * file[(vstart+new_l+4)*size + (hstart+new_m+6)];
-                        crypted[(vstart+k)*size + (hstart+new_m+7)] += a4 * file[(vstart+new_l+4)*size + (hstart+new_m+7)];
+                        crypted[crypted_index] += a * file[file_index];
+                        crypted[crypted_index+1] += a * file[file_index+1];
+                        crypted[crypted_index+2] += a * file[file_index+2];
+                        crypted[crypted_index+3] += a * file[file_index+3];
+                        crypted[crypted_index+4] += a * file[file_index+4];
+                        crypted[crypted_index+5] += a * file[file_index+5];
+                        crypted[crypted_index+6] += a * file[file_index+6];
+                        crypted[crypted_index+7] += a * file[file_index+7];
 
-                        crypted[(vstart+k)*size + (hstart+new_m)] += a5 * file[(vstart+new_l+5)*size + (hstart+new_m)];
-                        crypted[(vstart+k)*size + (hstart+new_m+1)] += a5 * file[(vstart+new_l+5)*size + (hstart+new_m+1)];
-                        crypted[(vstart+k)*size + (hstart+new_m+2)] += a5 * file[(vstart+new_l+5)*size + (hstart+new_m+2)];
-                        crypted[(vstart+k)*size + (hstart+new_m+3)] += a5 * file[(vstart+new_l+5)*size + (hstart+new_m+3)];
-                        crypted[(vstart+k)*size + (hstart+new_m+4)] += a5 * file[(vstart+new_l+5)*size + (hstart+new_m+4)];
-                        crypted[(vstart+k)*size + (hstart+new_m+5)] += a5 * file[(vstart+new_l+5)*size + (hstart+new_m+5)];
-                        crypted[(vstart+k)*size + (hstart+new_m+6)] += a5 * file[(vstart+new_l+5)*size + (hstart+new_m+6)];
-                        crypted[(vstart+k)*size + (hstart+new_m+7)] += a5 * file[(vstart+new_l+5)*size + (hstart+new_m+7)];
+                        a = key[k*keysz + new_l+2];
+                        file_index = (vstart+new_l+2)*size + (hstart+new_m);
 
-                        crypted[(vstart+k)*size + (hstart+new_m)] += a6 * file[(vstart+new_l+6)*size + (hstart+new_m)];
-                        crypted[(vstart+k)*size + (hstart+new_m+1)] += a6 * file[(vstart+new_l+6)*size + (hstart+new_m+1)];
-                        crypted[(vstart+k)*size + (hstart+new_m+2)] += a6 * file[(vstart+new_l+6)*size + (hstart+new_m+2)];
-                        crypted[(vstart+k)*size + (hstart+new_m+3)] += a6 * file[(vstart+new_l+6)*size + (hstart+new_m+3)];
-                        crypted[(vstart+k)*size + (hstart+new_m+4)] += a6 * file[(vstart+new_l+6)*size + (hstart+new_m+4)];
-                        crypted[(vstart+k)*size + (hstart+new_m+5)] += a6 * file[(vstart+new_l+6)*size + (hstart+new_m+5)];
-                        crypted[(vstart+k)*size + (hstart+new_m+6)] += a6 * file[(vstart+new_l+6)*size + (hstart+new_m+6)];
-                        crypted[(vstart+k)*size + (hstart+new_m+7)] += a6 * file[(vstart+new_l+6)*size + (hstart+new_m+7)];
+                        crypted[crypted_index] += a * file[file_index];
+                        crypted[crypted_index+1] += a * file[file_index+1];
+                        crypted[crypted_index+2] += a * file[file_index+2];
+                        crypted[crypted_index+3] += a * file[file_index+3];
+                        crypted[crypted_index+4] += a * file[file_index+4];
+                        crypted[crypted_index+5] += a * file[file_index+5];
+                        crypted[crypted_index+6] += a * file[file_index+6];
+                        crypted[crypted_index+7] += a * file[file_index+7];
 
-                        crypted[(vstart+k)*size + (hstart+new_m)] += a7 * file[(vstart+new_l+7)*size + (hstart+new_m)];
-                        crypted[(vstart+k)*size + (hstart+new_m+1)] += a7 * file[(vstart+new_l+7)*size + (hstart+new_m+1)];
-                        crypted[(vstart+k)*size + (hstart+new_m+2)] += a7 * file[(vstart+new_l+7)*size + (hstart+new_m+2)];
-                        crypted[(vstart+k)*size + (hstart+new_m+3)] += a7 * file[(vstart+new_l+7)*size + (hstart+new_m+3)];
-                        crypted[(vstart+k)*size + (hstart+new_m+4)] += a7 * file[(vstart+new_l+7)*size + (hstart+new_m+4)];
-                        crypted[(vstart+k)*size + (hstart+new_m+5)] += a7 * file[(vstart+new_l+7)*size + (hstart+new_m+5)];
-                        crypted[(vstart+k)*size + (hstart+new_m+6)] += a7 * file[(vstart+new_l+7)*size + (hstart+new_m+6)];
-                        crypted[(vstart+k)*size + (hstart+new_m+7)] += a7 * file[(vstart+new_l+7)*size + (hstart+new_m+7)];
+                        a = key[k*keysz + new_l+3];
+                        file_index = (vstart+new_l+3)*size + (hstart+new_m);
+
+                        crypted[crypted_index] += a * file[file_index];
+                        crypted[crypted_index+1] += a * file[file_index+1];
+                        crypted[crypted_index+2] += a * file[file_index+2];
+                        crypted[crypted_index+3] += a * file[file_index+3];
+                        crypted[crypted_index+4] += a * file[file_index+4];
+                        crypted[crypted_index+5] += a * file[file_index+5];
+                        crypted[crypted_index+6] += a * file[file_index+6];
+                        crypted[crypted_index+7] += a * file[file_index+7];
+
+                        a = key[k*keysz + new_l+4];
+                        file_index = (vstart+new_l+4)*size + (hstart+new_m);
+
+                        crypted[crypted_index] += a * file[file_index];
+                        crypted[crypted_index+1] += a * file[file_index+1];
+                        crypted[crypted_index+2] += a * file[file_index+2];
+                        crypted[crypted_index+3] += a * file[file_index+3];
+                        crypted[crypted_index+4] += a * file[file_index+4];
+                        crypted[crypted_index+5] += a * file[file_index+5];
+                        crypted[crypted_index+6] += a * file[file_index+6];
+                        crypted[crypted_index+7] += a * file[file_index+7];
+
+                        a = key[k*keysz + new_l+5];
+                        file_index = (vstart+new_l+5)*size + (hstart+new_m);
+
+                        crypted[crypted_index] += a * file[file_index];
+                        crypted[crypted_index+1] += a * file[file_index+1];
+                        crypted[crypted_index+2] += a * file[file_index+2];
+                        crypted[crypted_index+3] += a * file[file_index+3];
+                        crypted[crypted_index+4] += a * file[file_index+4];
+                        crypted[crypted_index+5] += a * file[file_index+5];
+                        crypted[crypted_index+6] += a * file[file_index+6];
+                        crypted[crypted_index+7] += a * file[file_index+7];
+
+                        a = key[k*keysz + new_l+6];
+                        file_index = (vstart+new_l+6)*size + (hstart+new_m);
+
+                        crypted[crypted_index] += a * file[file_index];
+                        crypted[crypted_index+1] += a * file[file_index+1];
+                        crypted[crypted_index+2] += a * file[file_index+2];
+                        crypted[crypted_index+3] += a * file[file_index+3];
+                        crypted[crypted_index+4] += a * file[file_index+4];
+                        crypted[crypted_index+5] += a * file[file_index+5];
+                        crypted[crypted_index+6] += a * file[file_index+6];
+                        crypted[crypted_index+7] += a * file[file_index+7];
+
+                        a = key[k*keysz + new_l+7];
+                        file_index = (vstart+new_l+7)*size + (hstart+new_m);
+
+                        crypted[crypted_index] += a * file[file_index];
+                        crypted[crypted_index+1] += a * file[file_index+1];
+                        crypted[crypted_index+2] += a * file[file_index+2];
+                        crypted[crypted_index+3] += a * file[file_index+3];
+                        crypted[crypted_index+4] += a * file[file_index+4];
+                        crypted[crypted_index+5] += a * file[file_index+5];
+                        crypted[crypted_index+6] += a * file[file_index+6];
+                        crypted[crypted_index+7] += a * file[file_index+7];
                     }
                 }
             }
