@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
                 if(size == 128){
                     rate = 25;
                 }else if (size==8){
-                    rate = 200;
+                    rate = 250;
                 }
                 break;
             default:

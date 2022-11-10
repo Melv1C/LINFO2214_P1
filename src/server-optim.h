@@ -29,7 +29,7 @@ struct index_t {
         int vstart;
         int hstart;
         int new_k;
-        int new_m;
+        int new_i;
         int crypted_index;
         int file_index;
         uint32_t keysz;

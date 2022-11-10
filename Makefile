@@ -9,7 +9,7 @@ CFLAGS += -D_COLOR
 # Adapt these as you want to fit with your project
 CLIENT_SOURCES = $(wildcard src/client.c)
 TEST_CLIENT_SOURCES = $(wildcard src/test_client.c)
-SERVER_SOURCES = $(wildcard src/server.c src/log.c)
+SERVER_SOURCES = $(wildcard src/server.c)
 SERVER_OPTIM_SOURCES = $(wildcard src/server-optim.c)
 SERVER_C_L_SOURCES = $(wildcard src/server-line-line.c)
 SERVER_UNROLLING_SOURCES = $(wildcard src/server-unrolling.c)
@@ -55,7 +55,7 @@ clean:
 	rm -f $(CLIENT_OBJECTS) $(SERVER_OBJECTS) $(SERVER_OPTIM_OBJECTS) $(TEST_CLIENT_OBJECTS) $(SERVER_C_L_OBJECTS) $(SERVER_UNROLLING_OBJECTS) $(SERVER_OPTIM_MIN_OBJECTS)
 
 mrproper:
-	rm -f client server server-optim test-client server-column-line server-unrolling server-optim-min
+	rm -f client server server-optim test-client server-line-line server-unrolling server-optim-min
 	rm -f 
 # It is likely that you will need to update this
 tests: all
