@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
     files = malloc(sizeof(void*) * n_files);
     for (int i = 0 ; i < n_files; i++){
-        files[i] = malloc(square_size *sizeof(ARRAY_TYPE));
+        files[i] = aligned_alloc(size,size*size *sizeof(ARRAY_TYPE));
         // Pour random les valeurs
         /*for (int j = 0; j < square_size; j++) {
             files[i][j] = (ARRAY_TYPE) rand() % MAX_VALUE_ARRAY_TYPE;
@@ -135,7 +135,7 @@ int connection_handler(int sockfd) {
     }
 
     //Network byte order
-    ARRAY_TYPE key[keysz*keysz];
+    ARRAY_TYPE * key = aligned_alloc(keysz,keysz*keysz*sizeof(ARRAY_TYPE));
     unsigned tot = keysz*keysz * sizeof(ARRAY_TYPE);
     unsigned done = 0;
     while (done < tot) {
@@ -149,7 +149,7 @@ int connection_handler(int sockfd) {
 
     int nr = size / keysz;
     ARRAY_TYPE* file = files[fileid % n_files];
-    ARRAY_TYPE* crypted = malloc(size*size*sizeof(ARRAY_TYPE));
+    ARRAY_TYPE* crypted = calloc(size*size,sizeof(ARRAY_TYPE));
     //Compute sub-matrices
     for (int v = 0; v < nr ; v ++) {
         int vstart = v * keysz;
@@ -170,6 +170,21 @@ int connection_handler(int sockfd) {
             }
         }
     }
+    /*for (int v = 0; v < nr ; v ++) {
+        int vstart = v * keysz;
+        for (int h = 0; h < nr; h++) {
+            int hstart = h * keysz;
+            //Do the sub-matrix multiplication
+            for (int i = 0; i < keysz; i++) {
+                for (int k = 0; k < keysz; k++) {
+                    ARRAY_TYPE r = key[i*keysz+k];
+                    for (int j = 0; j < keysz; j++) {
+                        crypted[(vstart+i)*size+(hstart+j)]+=r*file[(vstart+k)*size+(hstart+j)];
+                    }
+                }
+            }
+        }
+    }*/
 
     //print_matrix(file,size);
     //print_matrix(key,keysz);

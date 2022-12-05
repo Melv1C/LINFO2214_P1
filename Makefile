@@ -13,7 +13,6 @@ SERVER_SOURCES = $(wildcard src/server.c)
 SERVER_OPTIM_SOURCES = $(wildcard src/server-optim.c)
 SERVER_C_L_SOURCES = $(wildcard src/server-line-line.c)
 SERVER_UNROLLING_SOURCES = $(wildcard src/server-unrolling.c)
-SERVER_OPTIM_MIN_SOURCES = $(wildcard src/server-optim-min.c)
 
 CLIENT_OBJECTS = $(CLIENT_SOURCES:.c=.o)
 TEST_CLIENT_OBJECTS = $(TEST_CLIENT_SOURCES:.c=.o)
@@ -21,7 +20,6 @@ SERVER_OBJECTS = $(SERVER_SOURCES:.c=.o)
 SERVER_OPTIM_OBJECTS = $(SERVER_OPTIM_SOURCES:.c=.o)
 SERVER_C_L_OBJECTS = $(SERVER_C_L_SOURCES:.c=.o)
 SERVER_UNROLLING_OBJECTS = $(SERVER_UNROLLING_SOURCES:.c=.o)
-SERVER_OPTIM_MIN_OBJECTS = $(SERVER_OPTIM_MIN_SOURCES:.c=.o)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
@@ -44,9 +42,6 @@ server-line-line: $(SERVER_C_L_OBJECTS)
 server-unrolling: $(SERVER_UNROLLING_OBJECTS)
 	$(CC) $(SERVER_UNROLLING_OBJECTS) -o $@ $(LDFLAGS)
 
-server-optim-min: $(SERVER_OPTIM_MIN_OBJECTS)
-	$(CC) $(SERVER_OPTIM_MIN_OBJECTS) -o $@ $(LDFLAGS)
-
 all: client server server-optim test-client server-line-line server-unrolling
 
 .PHONY: clean mrproper
@@ -55,7 +50,7 @@ clean:
 	rm -f $(CLIENT_OBJECTS) $(SERVER_OBJECTS) $(SERVER_OPTIM_OBJECTS) $(TEST_CLIENT_OBJECTS) $(SERVER_C_L_OBJECTS) $(SERVER_UNROLLING_OBJECTS) $(SERVER_OPTIM_MIN_OBJECTS)
 
 mrproper:
-	rm -f client server server-optim test-client server-line-line server-unrolling server-optim-min
+	rm -f client server server-optim test-client server-line-line server-unrolling
 	rm -f 
 # It is likely that you will need to update this
 tests: all
@@ -77,5 +72,5 @@ TAR_NAME="../projet2_claes_sirjacobs.tar.gz"
 
 tar:
 	# Generate the log file stat now. Try to keep the repository clean.
-	tar -czvf $(TAR_NAME) Makefile src
+	tar -czvf $(TAR_NAME) Makefile src/server.c src/server.h src/server-optim.c src/server-optim.h src/client.c src/client.h src/debug.h
 

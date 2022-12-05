@@ -179,7 +179,6 @@ int connection_handler(int sockfd) {
                     Bcolj[6] = file[(6 + index.vstart) * index.size + j + index.hstart];
                     Bcolj[7] = file[(7 + index.vstart) * index.size + j + index.hstart];
                 }else{
-                    
                     Bcolj[0] = file[(index.vstart)*index.size + j + index.hstart];
                     Bcolj[1] = file[(1+index.vstart)*index.size + j + index.hstart];
                     Bcolj[2] = file[(2+index.vstart)*index.size + j + index.hstart];
