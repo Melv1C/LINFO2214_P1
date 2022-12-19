@@ -14,6 +14,7 @@ SERVER_SOURCES = $(wildcard src/server.c)
 SERVER_OPTIM_SOURCES = $(wildcard src/server-optim.c)
 SERVER_FLOAT_SOURCES = $(wildcard src/server-float.c)
 SERVER_AVX_SOURCES = $(wildcard src/server-float-avx.c)
+SERVER_QUEUE_SOURCES = $(wildcard src/server-queue.c)
 
 
 CLIENT_OBJECTS = $(CLIENT_SOURCES:.c=.o)
@@ -23,6 +24,7 @@ SERVER_OBJECTS = $(SERVER_SOURCES:.c=.o)
 SERVER_OPTIM_OBJECTS = $(SERVER_OPTIM_SOURCES:.c=.o)
 SERVER_FLOAT_OBJECTS = $(SERVER_FLOAT_SOURCES:.c=.o)
 SERVER_AVX_OBJECTS = $(SERVER_AVX_SOURCES:.c=.o)
+SERVER_QUEUE_OBJECTS = $(SERVER_QUEUE_SOURCES:.c=.o)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
@@ -48,18 +50,21 @@ server-float: $(SERVER_FLOAT_OBJECTS)
 server-float-avx: $(SERVER_AVX_OBJECTS)
 	$(CC) $(SERVER_AVX_OBJECTS) -o $@ $(LDFLAGS)
 
+server-queue: $(SERVER_QUEUE_OBJECTS)
+	$(CC) $(SERVER_QUEUE_OBJECTS) -o $@ $(LDFLAGS)
+
 graph: client-graph server-float server-float-avx
 	./tests/graph.sh
 
-all: client server server-optim test-client server-float server-float-avx client-graph
+all: client server server-optim test-client server-float server-float-avx client-graph server-queue
 
 .PHONY: clean mrproper
 
 clean:
-	rm -f $(CLIENT_OBJECTS) $(SERVER_OBJECTS) $(SERVER_OPTIM_OBJECTS) $(TEST_CLIENT_OBJECTS) $(SERVER_FLOAT_OBJECTS) $(SERVER_AVX_OBJECTS) $(CLIENT_GRAPH_OBJECTS)
+	rm -f $(CLIENT_OBJECTS) $(SERVER_OBJECTS) $(SERVER_OPTIM_OBJECTS) $(TEST_CLIENT_OBJECTS) $(SERVER_FLOAT_OBJECTS) $(SERVER_AVX_OBJECTS) $(SERVER_QUEUE_OBJECTS) $(CLIENT_GRAPH_OBJECTS)
 
 mrproper:
-	rm -f client server server-optim test-client server-float server-float-avx client-graph
+	rm -f client server server-optim test-client server-float server-float-avx client-graph server-queue
 	rm -f data.txt graph.png
 # It is likely that you will need to update this
 tests: all
@@ -69,16 +74,8 @@ tests: all
 debug: CFLAGS += -D_DEBUG
 debug: clean all
 
-# Place the zip in the parent repository of the project
-# ZIP_NAME="../projet2_claes_sirjacobs.zip"
-ZIP_NAME="../projet3_claes.zip"
 
-# A zip target, to help you have a proper zip file. You probably need to adapt this code.
-zip:
-	# Generate the log file stat now. Try to keep the repository clean.
-	zip -r $(ZIP_NAME) Makefile src graph.py
-
-TAR_NAME="../projet3_claes.tar.gz"
+TAR_NAME="../projet4_claes_sirjacobs.tar.gz"
 
 tar:
 	# Generate the log file stat now. Try to keep the repository clean.
