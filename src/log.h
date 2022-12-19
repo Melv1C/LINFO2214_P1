@@ -17,4 +17,4 @@
 
 #endif //PROJET1_LOG_H
 
-void print_matrix(uint32_t * matrix, uint32_t size);
+void print_matrix(float * matrix, uint32_t size);

@@ -10,7 +10,7 @@ pthread_mutex_t lock;
 
 uint32_t size = 128;
 int rate = 100;
-int run_time = 10;
+int run_time = 3;
 char *ip = "127.0.0.1";
 int port = 2241;
 
@@ -60,14 +60,15 @@ int main(int argc, char **argv) {
 
     int again = 1;
 
-    while (again==1){
+    while (again==1) {
         nbre_respond = 0;
+
         DEBUG("Argument du client : size: %d, rate: %d, time: %d, ip: %s, port: %d", size, rate, run_time, ip, port);
 
-        pthread_t threads[run_time*rate];
+        pthread_t threads[run_time * rate];
 
-        sent_times = malloc(sizeof(int)*run_time*rate);
-        receive_times = malloc(sizeof(int)*run_time*rate);
+        sent_times = malloc(sizeof(int) * run_time * rate);
+        receive_times = malloc(sizeof(int) * run_time * rate);
         int nbre_threads = 0;
         int diffrate = SEC / rate;
 
@@ -79,36 +80,35 @@ int main(int argc, char **argv) {
                 usleep((next - getts()));
             }
             sent_times[nbre_threads] = getts();
-            pthread_create( &threads[nbre_threads], NULL, rcv, (void*)(intptr_t)nbre_threads);
+            pthread_create(&threads[nbre_threads], NULL, rcv, (void *) (intptr_t) nbre_threads);
             nbre_threads++;
         }
 
-        INFO("Nbre respond in 3s : %d",nbre_respond);
         if (nbre_respond>run_time*rate-5){
             again = 1;
             rate = rate * 2;
         }else{
+            INFO("Nbre respond in 3s : %d",nbre_respond);
             again = 0;
+            FILE *f;
+            f = fopen("data.txt", "a");
+            fprintf(f, "%d,%d\n", size, nbre_respond);
+            fclose(f);
         }
+
         DEBUG("WAIT PTHREAD JOIN");
         for (int i = 0; i < nbre_threads; i++) {
-            pthread_join(threads[i],NULL);
+            pthread_join(threads[i], NULL);
         }
         pthread_mutex_destroy(&lock);
         DEBUG("FINISH");
-        DEBUG("AvgRespTime = %u µs", totalrespt/nbre_respond);
-        DEBUG("Nbre of request : %d and respond : %d",nbre_request,nbre_respond);
+        DEBUG("AvgRespTime = %u µs", totalrespt / nbre_respond);
+        DEBUG("Nbre of request : %d and respond : %d", nbre_request, nbre_respond);
+
 
         free(sent_times);
         free(receive_times);
     }
-
-
-
-    //FILE *f;
-    //f = fopen("vm_stat_client.txt", "a");
-    //fprintf(f,"%d,%d,%d,%d,%d,%d\n",rate,run_time,(int) sqrt(size),nbre_respond,nbre_request,totalrespt/nbre_respond);
-    //fclose(f);
 
 }
 
@@ -117,7 +117,7 @@ void* rcv(void* r) {
     int sockfd;
     // Creating socket file descriptor
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
-        ERROR("socket creation failed");
+        //ERROR("socket creation failed");
         //exit(EXIT_FAILURE);
         return ;
     }
@@ -129,7 +129,7 @@ void* rcv(void* r) {
     servaddr.sin_addr.s_addr = INADDR_ANY;
 
     if(connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr))<0){
-        ERROR("Unable to connect");
+        //ERROR("Unable to connect");
         //exit(EXIT_FAILURE);
         return;
     }

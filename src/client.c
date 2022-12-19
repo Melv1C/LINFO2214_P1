@@ -138,7 +138,9 @@ void* rcv(void* r) {
     //Send key
     ARRAY_TYPE * key = malloc(sizeof(ARRAY_TYPE)*size*size);
     for (int i = 0; i < size*size; i++) {
-        key[i] = (ARRAY_TYPE) rand() % MAX_VALUE_ARRAY_TYPE;
+        //key[i] = (ARRAY_TYPE) rand(); //% MAX_VALUE_ARRAY_TYPE;
+        //key[i] = (ARRAY_TYPE)(rand()%100);
+        key[i] = (ARRAY_TYPE)rand()/(ARRAY_TYPE)(RAND_MAX/1);
     }
     ret = send(sockfd, key, sizeof(ARRAY_TYPE) * size * size, 0);
     if (ret<0){

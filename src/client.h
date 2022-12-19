@@ -20,8 +20,9 @@
 #include <sys/time.h>
 #include <pthread.h>
 #include <stdint.h>
+#include <float.h>
 
-#define ARRAY_TYPE uint32_t
+#define ARRAY_TYPE float
 
 int MAX_VALUE_ARRAY_TYPE = UINT32_MAX;
 
