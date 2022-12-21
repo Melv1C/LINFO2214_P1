@@ -2,12 +2,15 @@
 CC = gcc -pthread -lpthread -g
 
 # Feel free to add other C flags   
-CFLAGS += -c -std=gnu99 -O2 -mno-sse2 -mno-avx -mno-avx2 -mno-avx512f -fno-unroll-loops -fno-tree-vectorize -O2 -lm -march=native -mavx
+CFLAGS += -c -std=gnu99 -O2 -mno-sse2 -mno-avx -mno-avx2 -mno-avx512f -fno-unroll-loops -fno-tree-vectorize -O2 -march=native -mavx
 # By default, we colorize the output, but this might be ugly in log files, so feel free to remove the following line.
 CFLAGS += -D_COLOR
 
+LDFLAGS = -lm
+
 # Adapt these as you want to fit with your project
 CLIENT_SOURCES = $(wildcard src/client.c)
+CLIENT_QUEUE_SOURCES = $(wildcard src/client-queue.c)
 CLIENT_GRAPH_SOURCES = $(wildcard src/client-graph.c)
 TEST_CLIENT_SOURCES = $(wildcard src/test_client.c)
 SERVER_SOURCES = $(wildcard src/server.c)
@@ -18,6 +21,7 @@ SERVER_QUEUE_SOURCES = $(wildcard src/server-queue.c)
 
 
 CLIENT_OBJECTS = $(CLIENT_SOURCES:.c=.o)
+CLIENT_QUEUE_OBJECTS = $(CLIENT_QUEUE_SOURCES:.c=.o)
 CLIENT_GRAPH_OBJECTS = $(CLIENT_GRAPH_SOURCES:.c=.o)
 TEST_CLIENT_OBJECTS = $(TEST_CLIENT_SOURCES:.c=.o)
 SERVER_OBJECTS = $(SERVER_SOURCES:.c=.o)
@@ -34,6 +38,9 @@ test-client: $(TEST_CLIENT_OBJECTS)
 
 client: $(CLIENT_OBJECTS)
 	$(CC) $(CLIENT_OBJECTS) -o $@ $(LDFLAGS)
+
+client-queue: $(CLIENT_QUEUE_OBJECTS)
+	$(CC) $(CLIENT_QUEUE_OBJECTS) -o $@ $(LDFLAGS)
 
 client-graph: $(CLIENT_GRAPH_OBJECTS)
 	$(CC) $(CLIENT_GRAPH_OBJECTS) -o $@ $(LDFLAGS)
@@ -53,18 +60,18 @@ server-float-avx: $(SERVER_AVX_OBJECTS)
 server-queue: $(SERVER_QUEUE_OBJECTS)
 	$(CC) $(SERVER_QUEUE_OBJECTS) -o $@ $(LDFLAGS)
 
-graph: client-graph server-float server-float-avx
+graph: client-queue server-queue
 	./tests/graph.sh
 
-all: client server server-optim test-client server-float server-float-avx client-graph server-queue
+all: client client-queue server server-optim test-client server-float server-float-avx client-graph server-queue
 
 .PHONY: clean mrproper
 
 clean:
-	rm -f $(CLIENT_OBJECTS) $(SERVER_OBJECTS) $(SERVER_OPTIM_OBJECTS) $(TEST_CLIENT_OBJECTS) $(SERVER_FLOAT_OBJECTS) $(SERVER_AVX_OBJECTS) $(SERVER_QUEUE_OBJECTS) $(CLIENT_GRAPH_OBJECTS)
+	rm -f $(CLIENT_OBJECTS) $(CLIENT_QUEUE_OBJECTS) $(SERVER_OBJECTS) $(SERVER_OPTIM_OBJECTS) $(TEST_CLIENT_OBJECTS) $(SERVER_FLOAT_OBJECTS) $(SERVER_AVX_OBJECTS) $(SERVER_QUEUE_OBJECTS) $(CLIENT_GRAPH_OBJECTS)
 
 mrproper:
-	rm -f client server server-optim test-client server-float server-float-avx client-graph server-queue
+	rm -f client client-queue server server-optim test-client server-float server-float-avx client-graph server-queue
 	rm -f data.txt graph.png
 # It is likely that you will need to update this
 tests: all

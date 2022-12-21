@@ -1,26 +1,31 @@
-rm data.txt
-kill -9 $(lsof -t -i:2100)
-kill -9 $(lsof -t -i:2101)
+port=2254
+rate=100
+key_size=8
+
+
+
+
+rm respond_time.txt
+rm service_time.txt
+rm arrival_time.txt
+rm client_in_queue.txt
+
+
+
+kill -9 $(lsof -t -i:${port})
 
 sleep 2
 
-echo "Lancement de server float"
-./server-float -j 1 -s 1024 -p 2100&
+echo "Lancement de server queue"
+./server-queue -j 1 -s 1024 -p ${port}&
+sleep 1
 
-echo "Lancement du client (size key 8)"
-./client-graph -k 8 127.0.0.1:2100
+echo "Lancement du client queue"
+./client-queue -k 128 -r ${rate} -t 5 127.0.0.1:${port}
 
-echo "Lancement du client (size key 128)"
-./client-graph -k 128 127.0.0.1:2100
+sleep 2
 
-echo "Lancement de server float avx"
-./server-float-avx -j 1 -s 1024 -p 2101&
+kill -9 $(lsof -t -i:${port})
 
-
-echo "Lancement du client (size key 8)"
-./client-graph -k 8 127.0.0.1:2101
-
-echo "Lancement du client (size key 128)"
-./client-graph -k 128 127.0.0.1:2101
 
 python3 ./tests/graph.py

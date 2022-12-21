@@ -8,6 +8,8 @@ int port = 2241;
 uint32_t square_size;
 ARRAY_TYPE ** files;
 
+int service_time;
+
 int getts(){
     struct timeval now;
     gettimeofday(&now, NULL);
@@ -99,20 +101,47 @@ int main(int argc, char **argv) {
 
     DEBUG("---------SERVER IS READY---------");
 
-    int client_sock;
-    int c = sizeof(servaddr);
-    while(client_sock = accept(sockfd, (struct sockaddr *)&servaddr,(socklen_t*)&c)) {
-        if (client_sock < 0) {
-            ERROR("Can't accept");
-        }else{
-            if(connection_handler(client_sock)!=0){
-                ERROR("error during connection handler for client sock %d",client_sock);
+    while (1) {
+        // Set up the file descriptor sets for the select function
+        fd_set read_fds;
+        FD_ZERO(&read_fds);
+        FD_SET(sockfd, &read_fds);
+
+        // Set up the timeout for the select function
+        // Use NULL pointer to wait indefinitely
+        struct timeval *timeout = NULL;
+
+        // Check for pending connections
+        int num_pending_connections = select(sockfd + 1, &read_fds, NULL, NULL, timeout);
+
+        if (num_pending_connections < 0) {
+            // An error occurred
+            perror("select");
+            return -1;
+        } else if (num_pending_connections == 0) {
+            // No connections are pending
+            continue;
+        } else {
+            // There is at least one pending connection
+            int client_sock;
+            int c = sizeof(servaddr);
+            system("ss -ltn sport = :2254 -o >> client_in_queue.txt");
+            client_sock = accept(sockfd, (struct sockaddr *)&servaddr,(socklen_t*)&c);
+
+            if (client_sock < 0) {
+                ERROR("Can't accept");
+            }else{
+                if(connection_handler(client_sock)!=0){
+                    ERROR("error during connection handler for client sock %d",client_sock);
+                }
             }
         }
     }
 }
 
 int connection_handler(int sockfd) {
+
+    int start_time = getts();
 
     uint32_t fileid;
     int tread = recv(sockfd, &fileid, 4, 0);
@@ -142,39 +171,6 @@ int connection_handler(int sockfd) {
         }
         done += tread;
     }
-
-    /*int nr = size / keysz;
-    ARRAY_TYPE* file = files[fileid % n_files];
-    ARRAY_TYPE crypted[square_size];
-    //Compute sub-matrices
-    for (int i = 0; i < nr ; i ++) {
-        int vstart = i * keysz;
-        for (int j = 0; j < nr; j++) {
-            int hstart = j * keysz;
-            //Do the sub-matrix multiplication
-            for (int ln = 0; ln < keysz; ln++) {
-                int aline = (vstart + ln) * size + hstart;
-                for (int col = 0; col < keysz; col++) {
-                    //int tot = 0;
-                    __m256 tot2 = _mm256_set_ps(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0);
-                    for (int k = 0; k < keysz/MIN_SIZE_KEY; k++) {
-                        __m256 a = _mm256_loadu_ps(&key[ln * keysz + k * MIN_SIZE_KEY]);
-                        __m256 b = _mm256_set_ps(file[(vstart + k * MIN_SIZE_KEY + 7) * size + hstart + col],file[(vstart + k * MIN_SIZE_KEY + 6) * size + hstart + col],file[(vstart + k * MIN_SIZE_KEY + 5) * size + hstart + col],file[(vstart + k * MIN_SIZE_KEY + 4) * size + hstart + col],file[(vstart + k * MIN_SIZE_KEY + 3) * size + hstart + col],file[(vstart + k * MIN_SIZE_KEY + 2) * size + hstart + col],file[(vstart + k * MIN_SIZE_KEY + 1) * size + hstart + col],file[(vstart + k * MIN_SIZE_KEY + 0) * size + hstart + col]);
-                        b = _mm256_mul_ps(a, b);
-                        tot2 = _mm256_add_ps(tot2, b);
-                    }
-
-                    float temp[8];
-                    _mm256_storeu_ps(temp,tot2);
-                    float tot = temp[0]+temp[1]+temp[2]+temp[3]+temp[4]+temp[5]+temp[6]+temp[7];
-
-                    crypted[aline + col] = tot;
-                    //_mm256_storeu_ps(&crypted[aline + col],tot2);
-
-                }
-            }
-        }
-    }*/
 
     int nr = size / keysz;
     ARRAY_TYPE* file = files[fileid % n_files];
@@ -218,6 +214,13 @@ int connection_handler(int sockfd) {
     //print_matrix(crypted,size);
     close(sockfd);
     //free(crypted);
+
+    service_time = getts() - start_time;
+    FILE *fp;
+    fp = fopen("service_time.txt", "a");
+    fprintf(fp, "%d\n", service_time);
+    fclose(fp);
+
     return 0;
 
 }

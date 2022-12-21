@@ -1,39 +1,76 @@
-import os
 import matplotlib.pyplot as plt
-import numpy as np
+
+# Lecture des données des fichiers service_time.txt, respond_time.txt et client_in_queue.txt
+with open("service_time.txt") as f:
+    service_times = [int(x) for x in f.read().split()]
+
+with open("respond_time.txt") as f:
+    respond_times = [int(x) for x in f.read().split()]
+
+"""with open("client_in_queue.txt") as f:
+    client_in_queue = [int(x) for x in f.read().split()]"""
+
+with open("arrival_time.txt") as f:
+    arrival_time = [int(x) for x in f.read().split()]
 
 
-with open("data.txt","r") as f:
-    data = f.readlines()
+import statistics
 
-print(data)
+# Calculate and print the mean and variance of the service times data
+service_mean = statistics.mean(service_times)
+service_variance = statistics.variance(service_times)
+print(f"Mean of service times: {service_mean}")
+print(f"Variance of service times: {service_variance}")
 
-# set width of bar
-barWidth = 0.25
-fig = plt.subplots(figsize =(12, 8))
-
-# set height of bar
-K_SIZE_8 = [int(data[0][:-1].split(",")[1]), int(data[2][:-1].split(",")[1])]
-K_SIZE_128 = [int(data[1][:-1].split(",")[1]), int(data[3][:-1].split(",")[1])]
-
-# Set position of bar on X axis
-br1 = np.arange(len(K_SIZE_8))
-br2 = [x + barWidth for x in br1]
-
-plt.bar(br1, K_SIZE_8, color ='r', width = barWidth,edgecolor ='grey', label ='Key size 8')
-plt.bar(br2, K_SIZE_128, color ='g', width = barWidth,edgecolor ='grey', label ='Key size 128')
-
-#plt.ylim(1,3000)
-#plt.yscale("log")
+# Calculate and print the mean and variance of the arrival times data
+arrival_mean = statistics.mean(arrival_time)
+arrival_variance = statistics.variance(arrival_time)
+print(f"Mean of arrival times: {arrival_mean}")
+print(f"Variance of arrival times: {arrival_variance}")
 
 
-# Adding Xticks
-plt.xlabel('Server', fontweight ='bold', fontsize = 15)
-plt.ylabel('Nbre of request in 10sec', fontweight ='bold', fontsize = 15)
-plt.xticks([r + barWidth//2 for r in range(len(K_SIZE_8))],
-        ['server-float', 'server-float-avx'])
+# Create a figure for the service times data
+fig0 = plt.figure()
 
-plt.title("Graph")
+# Plot the service times data
+plt.hist(arrival_time)
+plt.xlabel('Arrival times')
+plt.ylabel('Number of clients')
 
-plt.legend(loc = "upper left")
-plt.savefig('graph.png')
+# Display the figure
+plt.show()
+
+# Create a figure for the service times data
+figO = plt.figure()
+
+# Plot the service times data
+plt.hist(service_times)
+plt.xlabel('Service times')
+plt.ylabel('Number of clients')
+
+# Display the figure
+plt.show()
+
+# Create a figure for the respond times data
+fig2 = plt.figure()
+
+# Plot the respond times data
+plt.hist(respond_times)
+plt.xlabel('Respond times')
+plt.ylabel('Number of clients')
+
+# Display the figure
+plt.show()
+
+"""# Create a figure for the client in queue data
+fig3 = plt.figure()
+
+# Plot the client in queue data
+plt.plot(client_in_queue)
+plt.xlabel('Time')
+plt.ylabel('Number of clients in queue')
+
+# Display the figure
+plt.show()"""
+
+

@@ -2,7 +2,7 @@
 // Created by melvyn on 18/10/22.
 //
 
-#include "client.h"
+#include "client-queue.h"
 #include "debug.h"
 //#include "log.h"
 
@@ -25,6 +25,13 @@ int getts(){
     struct timeval now;
     gettimeofday(&now, NULL);
     return now.tv_sec*SEC+now.tv_usec;
+}
+
+//Generate a random exponential interval time
+uint64_t ran_expo(double lambda){
+    double u;
+    u = rand() / (RAND_MAX + 1.0);
+    return -log(1- u) * SEC / lambda;
 }
 
 int main(int argc, char **argv) {
@@ -68,11 +75,16 @@ int main(int argc, char **argv) {
     sent_times = malloc(sizeof(int)*run_time*rate);
     receive_times = malloc(sizeof(int)*run_time*rate);
     int nbre_threads = 0;
-    int diffrate = SEC / rate;
+    uint64_t diffrate = 0;
 
     int start = getts();
     int next = getts();
     while (getts() - start < SEC * run_time) {
+        diffrate = ran_expo(rate);
+        FILE *fp = fopen("arrival_time.txt", "a");
+        fprintf(fp, "%d\n", diffrate);
+        // Close the file
+        fclose(fp);
         next += diffrate;
         while (getts() < next) {
             usleep((next - getts()));
@@ -93,11 +105,6 @@ int main(int argc, char **argv) {
 
     free(sent_times);
     free(receive_times);
-
-    //FILE *f;
-    //f = fopen("vm_stat_client.txt", "a");
-    //fprintf(f,"%d,%d,%d,%d,%d,%d\n",rate,run_time,(int) sqrt(size),nbre_respond,nbre_request,totalrespt/nbre_respond);
-    //fclose(f);
 
 }
 
@@ -188,6 +195,10 @@ void* rcv(void* r) {
         nbre_respond++;
         pthread_mutex_unlock(&lock);
 
+        FILE *f;
+        f = fopen("respond_time.txt", "a");
+        fprintf(f,"%d\n",receive_times[t]-sent_times[t]);
+        fclose(f);
     }
 
     free(key);
